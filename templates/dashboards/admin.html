@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Admin dashboard — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">{{ user.first_name|default:user.email }}</h1>
+    <p class="text-muted mb-0">
+      <i class="bi bi-shield-check me-1"></i>Admin dashboard
+    </p>
+  </div>
+  <a href="{% url 'admin:index' %}" class="btn btn-outline-secondary btn-sm"
+     target="_blank">
+    <i class="bi bi-gear me-1"></i>Django admin
+  </a>
+</div>
+
+{# ===== Top stat cards ===== #}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="card bh-stat-card text-center">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">Total users</div>
+        <div class="fs-2 fw-semibold">{{ total_users }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card bh-stat-card text-center">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">Published courses</div>
+        <div class="fs-2 fw-semibold">{{ course_stats.published }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card bh-stat-card text-center">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">Active enrolments</div>
+        <div class="fs-2 fw-semibold">{{ enrollment_stats.active }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="card bh-stat-card text-center">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">Completions</div>
+        <div class="fs-2 fw-semibold">{{ enrollment_stats.completed }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  {# ===== Left column ===== #}
+  <div class="col-lg-8">
+
+    {# Pending teacher approvals #}
+    {% if pending_teachers %}
+      <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning-subtle fw-semibold">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+          Pending teacher approvals ({{ pending_teachers|length }})
+        </div>
+        <div class="list-group list-group-flush">
+          {% for tp in pending_teachers %}
+            <div class="list-group-item d-flex justify-content-between
+                        align-items-center">
+              <div>
+                <div class="fw-semibold">
+                  {{ tp.user.first_name }} {{ tp.user.last_name|default:"" }}
+                </div>
+                <div class="small text-muted">{{ tp.user.email }}</div>
+                {% if tp.specialization %}
+                  <div class="small text-muted">{{ tp.specialization }}</div>
+                {% endif %}
+              </div>
+              <a href="{% url 'admin:accounts_teacherprofile_change' tp.pk %}"
+                 target="_blank"
+                 class="btn btn-sm btn-warning">
+                <i class="bi bi-check-circle me-1"></i>Review
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+
+    {# Recent enrollments #}
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-book me-1"></i>Recent enrolments
+      </div>
+      {% if recent_enrollments %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Status</th>
+                <th>Enrolled</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for e in recent_enrollments %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold small">
+                      {{ e.student.user.first_name|default:e.student.user.email }}
+                    </div>
+                    <div class="text-muted" style="font-size:.75rem;">
+                      {{ e.student.user.email }}
+                    </div>
+                  </td>
+                  <td class="small">{{ e.course.title|truncatechars:36 }}</td>
+                  <td>
+                    {% if e.status == 'active' %}
+                      <span class="badge text-bg-success">Active</span>
+                    {% elif e.status == 'completed' %}
+                      <span class="badge text-bg-primary">Completed</span>
+                    {% else %}
+                      <span class="badge text-bg-secondary">{{ e.get_status_display }}</span>
+                    {% endif %}
+                  </td>
+                  <td class="small text-muted">{{ e.started_at|date:"M j, Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body text-muted small">No enrolments yet.</div>
+      {% endif %}
+    </div>
+
+    {# Recent signups #}
+    <div class="card">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-person-plus me-1"></i>Recent signups
+      </div>
+      {% if recent_users %}
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Name / email</th>
+                <th>Role</th>
+                <th>Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in recent_users %}
+                <tr>
+                  <td>
+                    <div class="fw-semibold small">
+                      {{ u.first_name }} {{ u.last_name }}
+                    </div>
+                    <div class="text-muted" style="font-size:.75rem;">
+                      {{ u.email }}
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge
+                      {% if u.role == 'teacher' %}text-bg-info
+                      {% elif u.role == 'admin' %}text-bg-danger
+                      {% elif u.role == 'parent' %}text-bg-secondary
+                      {% else %}text-bg-primary{% endif %}">
+                      {{ u.get_role_display }}
+                    </span>
+                  </td>
+                  <td class="small text-muted">{{ u.date_joined|date:"M j, Y" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="card-body text-muted small">No users yet.</div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  {# ===== Right column ===== #}
+  <div class="col-lg-4">
+
+    {# Users by role breakdown #}
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-people me-1"></i>Users by role
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Students
+          <span class="badge text-bg-primary rounded-pill">
+            {{ user_counts.student|default:0 }}
+          </span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Teachers
+          <span class="badge text-bg-info rounded-pill">
+            {{ user_counts.teacher|default:0 }}
+          </span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Parents
+          <span class="badge text-bg-secondary rounded-pill">
+            {{ user_counts.parent|default:0 }}
+          </span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Admins
+          <span class="badge text-bg-danger rounded-pill">
+            {{ user_counts.admin|default:0 }}
+          </span>
+        </li>
+      </ul>
+    </div>
+
+    {# Course overview #}
+    <div class="card mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-collection me-1"></i>Courses
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Total <span class="badge text-bg-light border">{{ course_stats.total }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Published <span class="badge text-bg-success">{{ course_stats.published }}</span>
+        </li>
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          Draft <span class="badge text-bg-warning">{{ course_stats.unpublished }}</span>
+        </li>
+      </ul>
+    </div>
+
+    {# Quick links to admin #}
+    <div class="card">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-lightning me-1"></i>Quick actions
+      </div>
+      <div class="list-group list-group-flush">
+        <a href="{% url 'admin:accounts_user_changelist' %}" target="_blank"
+           class="list-group-item list-group-item-action small">
+          <i class="bi bi-people me-2 text-muted"></i>Manage users
+        </a>
+        <a href="{% url 'admin:accounts_teacherprofile_changelist' %}" target="_blank"
+           class="list-group-item list-group-item-action small">
+          <i class="bi bi-check-circle me-2 text-muted"></i>Approve teachers
+        </a>
+        <a href="{% url 'admin:curriculum_course_changelist' %}" target="_blank"
+           class="list-group-item list-group-item-action small">
+          <i class="bi bi-collection me-2 text-muted"></i>Manage courses
+        </a>
+        <a href="{% url 'admin:curriculum_level_changelist' %}" target="_blank"
+           class="list-group-item list-group-item-action small">
+          <i class="bi bi-stack me-2 text-muted"></i>Manage CEFR levels
+        </a>
+        <a href="{% url 'admin:curriculum_category_changelist' %}" target="_blank"
+           class="list-group-item list-group-item-action small">
+          <i class="bi bi-tag me-2 text-muted"></i>Manage categories
+        </a>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

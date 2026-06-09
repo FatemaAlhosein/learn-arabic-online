@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+{% load markdown_extras %}
+
+{% block title %}{{ lesson.title }} — {{ course.title }}{% endblock %}
+
+{% block content %}
+
+{# ===== Breadcrumb ===== #}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item">
+      <a href="{% url 'curriculum:course_list' %}">Courses</a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'curriculum:course_detail' course.slug %}">
+        {{ course.title }}
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page">
+      {{ lesson.order }}. {{ lesson.title }}
+    </li>
+  </ol>
+</nav>
+
+{% if is_teacher_preview %}
+<div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+  <i class="bi bi-eye-fill fs-5"></i>
+  <div>
+    <strong>Teacher preview</strong> — you're viewing this lesson as it appears to students.
+    <a href="{% url 'curriculum:course_manage' course.slug %}" class="alert-link ms-2">
+      ← Back to course management
+    </a>
+  </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+
+  {# =================== Lesson list sidebar =================== #}
+  <aside class="col-lg-3 order-lg-2">
+    <div class="card sticky-lg-top" style="top: 1rem;">
+      <div class="card-header small fw-semibold">Lessons</div>
+      <ul class="list-group list-group-flush small">
+        {% for sib in siblings %}
+          {% if sib.pk == lesson.pk %}
+            <li class="list-group-item active">
+              <span class="me-2">{{ sib.order }}.</span>{{ sib.title }}
+            </li>
+          {% else %}
+            <a href="{% url 'curriculum:lesson_detail' course.slug sib.slug %}"
+               class="list-group-item list-group-item-action d-flex
+                      justify-content-between align-items-center">
+              <span>
+                <span class="text-muted me-2">{{ sib.order }}.</span>
+                {{ sib.title }}
+              </span>
+              {% if sib.id in completed_lesson_ids %}
+                <i class="bi bi-check-circle-fill text-success"
+                   title="Completed"></i>
+              {% elif sib.is_free_preview %}
+                <i class="bi bi-unlock-fill text-success-emphasis"
+                   title="Free preview"></i>
+              {% endif %}
+            </a>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+
+  {# =================== Main lesson column =================== #}
+  <div class="col-lg-9 order-lg-1">
+
+    <h1 class="mb-1">{{ lesson.title }}</h1>
+    <p class="text-muted small">
+      Lesson {{ lesson.order }} of {{ siblings|length }}
+      {% if lesson.duration_minutes %}
+        · <i class="bi bi-clock me-1"></i>{{ lesson.duration_minutes }} min
+      {% endif %}
+      {% if lesson.is_free_preview %}
+        · <span class="badge text-bg-success">Free preview</span>
+      {% endif %}
+      {% if progress and progress.status == 'completed' %}
+        · <span class="badge text-bg-success">
+            <i class="bi bi-check-circle-fill me-1"></i>Completed
+          </span>
+      {% endif %}
+    </p>
+
+    {% comment %}
+      Primary video — prefer a self-hosted file (HTML5 video tag);
+      fall back to an external embed (iframe) when no file is uploaded.
+    {% endcomment %}
+    {% if lesson.video_file %}
+      <div class="ratio ratio-16x9 my-4">
+        <video controls preload="metadata" style="background:#000;">
+          <source src="{{ lesson.video_file.url }}" type="video/mp4">
+          Your browser doesn't support HTML5 video. Please
+          <a href="{{ lesson.video_file.url }}">download the file</a>
+          instead.
+        </video>
+      </div>
+    {% elif lesson.primary_video_url %}
+      <div class="ratio ratio-16x9 my-4">
+        <iframe src="{{ lesson.primary_video_url }}"
+                title="{{ lesson.title }}"
+                frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write;
+                       encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      </div>
+    {% endif %}
+
+    {% if lesson.body_markdown %}
+      <div class="lesson-body prose">
+        {{ lesson.body_markdown|markdownify }}
+      </div>
+    {% endif %}
+
+    {# ----- Attachments ----- #}
+    {% if attachments %}
+      <h5 class="mt-5 mb-3">
+        <i class="bi bi-paperclip me-1"></i>Resources
+      </h5>
+      <ul class="list-group">
+        {% for a in attachments %}
+          <li class="list-group-item d-flex justify-content-between
+                     align-items-center">
+            <div>
+              {# Pick an icon by kind. #}
+              {% if a.kind == 'audio' %}<i class="bi bi-headphones me-2"></i>
+              {% elif a.kind == 'pdf' %}<i class="bi bi-file-earmark-pdf me-2"></i>
+              {% elif a.kind == 'docx' %}<i class="bi bi-file-earmark-word me-2"></i>
+              {% elif a.kind == 'pptx' %}<i class="bi bi-file-earmark-slides me-2"></i>
+              {% elif a.kind == 'image' %}<i class="bi bi-image me-2"></i>
+              {% elif a.kind == 'video' %}<i class="bi bi-camera-video me-2"></i>
+              {% else %}<i class="bi bi-file-earmark me-2"></i>{% endif %}
+              {{ a.title }}
+              <span class="badge text-bg-light border ms-1">
+                {{ a.get_kind_display }}
+              </span>
+            </div>
+            <div>
+              {% if a.file %}
+                {% if a.is_downloadable %}
+                  <a href="{{ a.file.url }}" download class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download me-1"></i>Download
+                  </a>
+                {% else %}
+                  <a href="{{ a.file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-eye me-1"></i>View
+                  </a>
+                {% endif %}
+              {% elif a.external_url %}
+                <a href="{{ a.external_url }}" target="_blank" rel="noopener"
+                   class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-box-arrow-up-right me-1"></i>Open
+                </a>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ----- Lesson quizzes ----- #}
+    {% if lesson_quizzes %}
+      <h5 class="mt-5 mb-3">
+        <i class="bi bi-patch-question me-1"></i>Check your understanding
+      </h5>
+      <ul class="list-group">
+        {% for q in lesson_quizzes %}
+          <li class="list-group-item d-flex justify-content-between
+                     align-items-center">
+            <div>
+              <i class="bi bi-question-circle me-2"></i>
+              {{ q.title }}
+              <span class="badge text-bg-light border ms-1">
+                Pass at {{ q.pass_threshold }}%
+              </span>
+            </div>
+            <a href="{% url 'assessments:quiz_intro' q.id %}"
+               class="btn btn-sm btn-outline-primary">
+              {% if progress and progress.status == 'completed' %}
+                Retake quiz
+              {% else %}
+                Take quiz
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ----- Flashcard decks ----- #}
+    {% if flashcard_decks %}
+      <h5 class="mt-5 mb-3">
+        <i class="bi bi-card-text me-1"></i>Practise vocabulary
+      </h5>
+      <ul class="list-group">
+        {% for d in flashcard_decks %}
+          <li class="list-group-item d-flex justify-content-between
+                     align-items-center">
+            <div>
+              <i class="bi bi-collection me-2"></i>
+              {{ d.title }}
+              <span class="badge text-bg-light border ms-1">
+                {{ d.cards.count }} card{{ d.cards.count|pluralize }}
+              </span>
+            </div>
+            <a href="{% url 'flashcards:deck_intro' d.id %}"
+               class="btn btn-sm btn-outline-primary">
+              Study cards
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ----- Lesson assignments ----- #}
+    {% if lesson_assignments %}
+      <h5 class="mt-5 mb-3">
+        <i class="bi bi-clipboard-check me-1"></i>Assignments
+      </h5>
+      <ul class="list-group">
+        {% for asgn in lesson_assignments %}
+          <li class="list-group-item d-flex justify-content-between align-items-center gap-3">
+            <div class="flex-grow-1">
+              <div class="fw-semibold">
+                <i class="bi bi-journal-text text-warning me-1"></i>{{ asgn.title }}
+              </div>
+              {% if asgn.description %}
+                <div class="small text-muted">{{ asgn.description }}</div>
+              {% endif %}
+              {% if asgn.due_date %}
+                <div class="small text-muted mt-1">
+                  <i class="bi bi-calendar-event me-1"></i>Due {{ asgn.due_date|date:"j N Y, g:i a" }}
+                  · Max {{ asgn.max_score }} pts
+                </div>
+              {% else %}
+                <div class="small text-muted mt-1">Max {{ asgn.max_score }} pts</div>
+              {% endif %}
+            </div>
+            <div class="text-nowrap flex-shrink-0">
+              {% if submission_map and asgn.id in submission_map %}
+                {% if submission_map|dictsort:asgn.id %}{% endif %}
+                <span class="badge
+                  {% if submission_map.asgn.id == 'graded' %}text-bg-success
+                  {% elif submission_map.asgn.id == 'submitted' %}text-bg-warning
+                  {% else %}text-bg-secondary{% endif %} me-2">
+                </span>
+              {% endif %}
+              <a href="{% url 'assignments:assignment_detail' asgn.id %}"
+                 class="btn btn-sm btn-outline-warning">
+                Open <i class="bi bi-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {# ----- Mark-as-complete + prev/next pager ----- #}
+    <div class="mt-5 pt-3 border-top">
+
+      {# Center: completion control. Only shown to enrolled students (not teacher preview). #}
+      {% if enrollment and not is_teacher_preview %}
+        <div class="text-center mb-3">
+          {% if progress and progress.status == 'completed' %}
+            <span class="badge text-bg-success fs-6">
+              <i class="bi bi-check-circle-fill me-1"></i>Lesson completed
+            </span>
+            {% if progress.completed_at %}
+              <div class="small text-muted mt-1">
+                on {{ progress.completed_at|date:"M j, Y" }}
+              </div>
+            {% endif %}
+          {% else %}
+            <form method="post"
+                  action="{% url 'curriculum:complete_lesson' course.slug lesson.slug %}"
+                  class="m-0">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-check2-square me-1"></i>Mark as complete
+              </button>
+            </form>
+            <p class="small text-muted mt-2 mb-0">
+              {% if lesson_quizzes %}
+                Or pass the quiz above to mark this lesson complete.
+              {% else %}
+                Click when you've finished the material.
+              {% endif %}
+            </p>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <nav class="d-flex justify-content-between">
+        {% if prev_lesson %}
+          <a href="{% url 'curriculum:lesson_detail' course.slug prev_lesson.slug %}"
+             class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>{{ prev_lesson.title|truncatechars:32 }}
+          </a>
+        {% else %}<span></span>{% endif %}
+
+        {% if next_lesson %}
+          <a href="{% url 'curriculum:lesson_detail' course.slug next_lesson.slug %}"
+             class="btn btn-primary">
+            {{ next_lesson.title|truncatechars:32 }}<i class="bi bi-arrow-right ms-1"></i>
+          </a>
+        {% else %}<span></span>{% endif %}
+      </nav>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

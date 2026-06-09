@@ -1,0 +1,120 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\froman\fcharset0 Times-Roman;\f1\fmodern\fcharset0 Courier;\f2\froman\fcharset0 Times-Bold;
+\f3\fnil\fcharset0 HelveticaNeue;\f4\froman\fcharset0 Times-Italic;\f5\fnil\fcharset0 Menlo-Regular;
+}
+{\colortbl;\red255\green255\blue255;\red4\green57\blue181;\red0\green0\blue0;\red162\green55\blue4;
+\red0\green0\blue0;\red16\green19\blue24;\red108\green0\blue181;\red32\green36\blue45;\red66\green179\blue255;
+\red24\green24\blue24;\red193\green193\blue193;\red202\green202\blue202;\red194\green126\blue101;\red89\green138\blue67;
+}
+{\*\expandedcolortbl;;\cssrgb\c0\c31765\c76078;\cssrgb\c0\c0\c0;\cssrgb\c70196\c29020\c0;
+\cssrgb\c0\c0\c0\c84706;\cssrgb\c7843\c9412\c12157;\cssrgb\c50588\c0\c76078;\cssrgb\c16863\c18824\c23137;\cssrgb\c30980\c75686\c100000;
+\cssrgb\c12157\c12157\c12157;\cssrgb\c80000\c80000\c80000;\cssrgb\c83137\c83137\c83137;\cssrgb\c80784\c56863\c47059;\cssrgb\c41569\c60000\c33333;
+}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}}
+\margl1440\margr1440\vieww35640\viewh21840\viewkind0
+\deftab720
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs36 \cf2 \expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec2 Step 1\
+mkdir\cf0 \strokec3  Learn_Arabic_Online \cf4 \strokec4 cd\cf0 \strokec3  Learn_Arabic_Online\
+Step 2\'97 Create the Python virtual environment\
+\pard\pardeftab720\partightenfactor0
+
+\f1 \cf0 \strokec3 Create virtual environment
+\f0  + activate: python3 -m venv venv,  \cf4 \strokec4 source\cf0 \strokec3  venv/bin/activate\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\b \cf0 \strokec3 Step 3 \'97 Install Django + libraries
+\f3\b0 \cf5 \strokec5 \
+\pard\pardeftab720\partightenfactor0
+
+\f0 \cf0 \strokec3 bash\
+\cf6 \strokec6 pip \cf2 \strokec2 install\cf6 \strokec6  --upgrade pip\
+pip \cf2 \strokec2 install\cf6 \strokec6  Django mysqlclient djangorestframework djangorestframework-simplejwt python-decouple Pillow\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 What each one does:\
+\pard\tx220\tx720\pardeftab720\li720\fi-720\partightenfactor0
+\ls1\ilvl0
+\f2\b \cf0 \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Django
+\f0\b0  \'97 the web framework itself.\
+\ls1\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 mysqlclient
+\f0\b0  \'97 Python \uc0\u8596  MySQL driver.\
+\ls1\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 djangorestframework
+\f0\b0  \'97 for our JSON API endpoints.\
+\ls1\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 djangorestframework-simplejwt
+\f0\b0  \'97 JWT login (token stored in browser localStorage).\
+\ls1\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 python-decouple
+\f0\b0  \'97 reads 
+\f1 .env
+\f0  so secrets aren't in code.\
+\ls1\ilvl0
+\f2\b \kerning1\expnd0\expndtw0 \outl0\strokewidth0 {\listtext	\uc0\u8226 	}\expnd0\expndtw0\kerning0
+\outl0\strokewidth0 \strokec3 Pillow
+\f0\b0  \'97 image processing (course cover photos later).\
+\pard\pardeftab720\partightenfactor0
+\cf0 \strokec3 \
+\pard\pardeftab720\partightenfactor0
+\cf0 \strokec3 Step 4 \'97 Create the Django project module\
+django-admin startproject core\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\b \cf0 Step 5 \'97 Verify it boots
+\f0\b0 \
+\pard\pardeftab720\partightenfactor0
+\cf6 \strokec6 python manage.py runserver\
+\
+Step 6: Database MySQL\
+\pard\pardeftab720\sa240\partightenfactor0
+
+\f2\b \cf0 \strokec3 Critical for Arabic content:
+\f0\b0  the database must use 
+\f1 \strokec3 utf8mb4
+\f0 \strokec3  charset and a Unicode collation. Without this, Arabic text will either fail to insert or come back as 
+\f1 \strokec3 ???
+\f0 \strokec3 . Don't accept the DataGrip default if it offers 
+\f1 \strokec3 latin1
+\f0 \strokec3  or plain 
+\f1 \strokec3 utf8
+\f0 \strokec3 .\
+\pard\pardeftab720\sa319\partightenfactor0
+
+\f2\b \cf0 \strokec3 In DataGrip \'97 two ways\
+\pard\pardeftab720\sa240\partightenfactor0
+\cf0 \strokec3 Option A: SQL console (recommended, explicit and reproducible)
+\f0\b0 \
+Open a query console on your MySQL server connection (right-click the data source \uc0\u8594  
+\f4\i \strokec3 New \uc0\u8594  Query Console
+\f0\i0 \strokec3 ), and run:\
+sql\
+\pard\pardeftab720\partightenfactor0
+\cf7 \strokec7 CREATE\cf6 \strokec6  \cf7 \strokec7 DATABASE\cf6 \strokec6  \cf8 \strokec8 `\cf6 \strokec6 Learn_arabic_Online\cf8 \strokec8 `\cf6 \strokec6 \
+  \cf7 \strokec7 CHARACTER\cf6 \strokec6  \cf7 \strokec7 SET\cf6 \strokec6  utf8mb4\
+  \cf7 \strokec7 COLLATE\cf6 \strokec6  utf8mb4_unicode_ci\cf8 \strokec8 ;\cf6 \strokec6 \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f5\fs24 \cf9 \cb10 \strokec9 DATABASES\cf11 \strokec11  \cf12 \strokec12 =\cf11 \strokec11  \{\cb1 \
+\cb10     \cf13 \strokec13 'default'\cf11 \strokec11 : \{\cb1 \
+\cb10         \cf13 \strokec13 'ENGINE'\cf11 \strokec11 : \cf13 \strokec13 'django.db.backends.mysql'\cf11 \strokec11 ,\cb1 \
+\cb10         \cf13 \strokec13 'NAME'\cf11 \strokec11 : \cf13 \strokec13 'Learn_Arabic_Online'\cf11 \strokec11 ,\cb1 \
+\cb10         \cf13 \strokec13 'USER'\cf11 \strokec11 : \cf13 \strokec13 'root'\cf11 \strokec11 ,\cb1 \
+\cb10         \cf13 \strokec13 'PASSWORD'\cf11 \strokec11 : \cf13 \strokec13 'Yousufis2'\cf11 \strokec11 ,\cb1 \
+\cb10         \cf13 \strokec13 'HOST'\cf11 \strokec11 : \cf13 \strokec13 'localhost'\cf11 \strokec11 ,  \cf14 \strokec14 # Or your DB IP address\cf11 \cb1 \strokec11 \
+\cb10         \cf13 \strokec13 'PORT'\cf11 \strokec11 : \cf13 \strokec13 '3306'\cf11 \strokec11 ,       \cf14 \strokec14 # Default MySQL port\cf11 \cb1 \strokec11 \
+\cb10     \}\cb1 \
+\cb10 \}\cb1 \
+\pard\pardeftab720\partightenfactor0
+
+\f0\fs36 \cf0 \strokec3 Also  pip3 install mysqlclient\
+}

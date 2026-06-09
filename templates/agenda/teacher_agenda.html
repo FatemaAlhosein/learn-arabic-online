@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Agenda — {{ SITE_NAME }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.day-col { min-width: 0; }
+.day-header { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.today-col .day-header { color: var(--bs-primary); }
+.today-col .day-card  { border: 2px solid var(--bs-primary) !important; }
+.agenda-item { border-radius: .6rem; padding: .6rem .75rem; margin-bottom: .5rem; position: relative; }
+.item-lesson   { background: #e8f4fd; border-left: 3px solid #0d6efd; }
+.item-homework { background: #fff8e1; border-left: 3px solid #ffc107; }
+.item-quiz     { background: #f3e8ff; border-left: 3px solid #6f42c1; }
+.item-event    { background: #e8f8f0; border-left: 3px solid #198754; }
+.item-reminder { background: #fff3cd; border-left: 3px solid #fd7e14; }
+.item-note     { background: #f8f9fa; border-left: 3px solid #6c757d; }
+.schedule-chip { font-size: .72rem; background: #eef2ff; border-radius: .4rem; padding: .25rem .5rem; margin-bottom: .3rem; }
+.item-actions { position: absolute; top: .4rem; right: .4rem; display: none; gap: .2rem; }
+.agenda-item:hover .item-actions { display: flex; }
+.week-nav .btn { font-size: .85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Agenda</li>
+  </ol>
+</nav>
+
+{# ── Header ── #}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <div style="font-size:2.5rem;line-height:1;">📅</div>
+    <div>
+      <h1 class="h3 mb-0">Class Agenda</h1>
+      <p class="text-muted mb-0 small">{{ monday|date:"j N" }} — {{ sunday|date:"j N Y" }}</p>
+    </div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'agenda:item_create' %}?w={{ offset }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add item
+    </a>
+    <a href="{% url 'agenda:schedule_create' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-clock me-1"></i>Add class time
+    </a>
+  </div>
+</div>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+{# ── Week nav + course filter ── #}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+  <div class="week-nav d-flex gap-2 align-items-center">
+    <a href="?w={{ prev_offset }}{% if course_filter_id %}&course={{ course_filter_id }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-chevron-left"></i> Prev
+    </a>
+    {% if offset != 0 %}
+      <a href="?w=0{% if course_filter_id %}&course={{ course_filter_id }}{% endif %}" class="btn btn-outline-primary btn-sm">Today</a>
+    {% endif %}
+    <a href="?w={{ next_offset }}{% if course_filter_id %}&course={{ course_filter_id }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+      Next <i class="bi bi-chevron-right"></i>
+    </a>
+  </div>
+
+  {# Course filter #}
+  <form method="get" class="d-flex gap-2 align-items-center">
+    <input type="hidden" name="w" value="{{ offset }}">
+    <select name="course" class="form-select form-select-sm" style="min-width:200px;" onchange="this.form.submit()">
+      <option value="">All courses</option>
+      {% for c in courses %}
+        <option value="{{ c.id }}" {% if course_filter_id == c.id|stringformat:"s" %}selected{% endif %}>
+          {{ c.title|truncatechars:35 }}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+{# ── Weekly grid ── #}
+<div class="row g-3">
+  {% for day in days %}
+    <div class="col-sm-6 col-lg day-col {% if day.is_today %}today-col{% endif %}">
+      <div class="card h-100 border-0 shadow-sm day-card">
+        <div class="card-header py-2 d-flex justify-content-between align-items-center
+                    {% if day.is_today %}bg-primary text-white{% else %}bg-light{% endif %}">
+          <div>
+            <div class="day-header">{{ day.date|date:"l" }}</div>
+            <div class="small {% if day.is_today %}opacity-75{% else %}text-muted{% endif %}">
+              {{ day.date|date:"j N" }}
+            </div>
+          </div>
+          <a href="{% url 'agenda:item_create' %}?date={{ day.date|date:'Y-m-d' }}&w={{ offset }}{% if course_filter_id %}&course={{ course_filter_id }}{% endif %}"
+             class="btn btn-sm {% if day.is_today %}btn-light btn-outline-light{% else %}btn-outline-secondary{% endif %}"
+             style="padding:.15rem .45rem;font-size:.8rem;" title="Add item for this day">
+            <i class="bi bi-plus"></i>
+          </a>
+        </div>
+        <div class="card-body p-2">
+
+          {# Schedule chips #}
+          {% for slot in day.schedule %}
+            <div class="schedule-chip d-flex align-items-center justify-content-between">
+              <span>
+                <i class="bi bi-clock me-1"></i>
+                {{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}
+                {{ slot.course.title|truncatechars:15 }}
+                {% if slot.location %}<span class="text-muted">· {{ slot.location }}</span>{% endif %}
+              </span>
+              <form method="post" action="{% url 'agenda:schedule_delete' slot.id %}" class="m-0 ms-1"
+                    onsubmit="return confirm('Remove this class time?')">
+                {% csrf_token %}
+                <input type="hidden" name="week_offset" value="{{ offset }}">
+                <button type="submit" class="btn btn-link btn-sm text-danger p-0" title="Delete">
+                  <i class="bi bi-x"></i>
+                </button>
+              </form>
+            </div>
+          {% endfor %}
+
+          {# Agenda items #}
+          {% for item in day.items %}
+            <div class="agenda-item item-{{ item.kind }}">
+              <div class="item-actions">
+                <a href="{% url 'agenda:item_edit' item.id %}?w={{ offset }}"
+                   class="btn btn-light btn-sm py-0 px-1" title="Edit"><i class="bi bi-pencil"></i></a>
+                <form method="post" action="{% url 'agenda:item_delete' item.id %}"
+                      onsubmit="return confirm('Delete this item?')" class="m-0">
+                  {% csrf_token %}
+                  <input type="hidden" name="week_offset" value="{{ offset }}">
+                  <button type="submit" class="btn btn-light btn-sm py-0 px-1 text-danger" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+              <div class="fw-semibold small pe-5">{{ item.get_kind_display }} {{ item.title }}</div>
+              {% if item.description %}
+                <div class="text-muted" style="font-size:.75rem;">{{ item.description|truncatechars:70 }}</div>
+              {% endif %}
+              <div class="d-flex flex-wrap gap-2 mt-1" style="font-size:.72rem; color:#666;">
+                <span>{{ item.course.title|truncatechars:20 }}</span>
+                {% if item.due_time %}<span><i class="bi bi-clock me-1"></i>{{ item.due_time|time:"H:i" }}</span>{% endif %}
+              </div>
+            </div>
+          {% empty %}
+            {% if not day.schedule %}
+              <p class="text-muted text-center small mt-3" style="font-size:.8rem;">Nothing yet</p>
+            {% endif %}
+          {% endfor %}
+
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">
+      <i class="bi bi-bell me-2"></i>Notifications
+    </h1>
+    {% if unread_count > 0 %}
+      <p class="text-muted mb-0">
+        You had <strong>{{ unread_count }}</strong>
+        unread notification{{ unread_count|pluralize }} — all marked as read now.
+      </p>
+    {% else %}
+      <p class="text-muted mb-0">You're all caught up.</p>
+    {% endif %}
+  </div>
+  {% if notifications %}
+    <form method="post" action="{% url 'notifications:mark_all_read' %}" class="no-print">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-check2-all me-1"></i>Mark all read
+      </button>
+    </form>
+  {% endif %}
+</div>
+
+{% if notifications %}
+  <div class="card">
+    <div class="list-group list-group-flush">
+      {% for n in notifications %}
+        <div class="list-group-item list-group-item-action
+                    d-flex gap-3 align-items-start py-3
+                    {% if not n.is_read %}bg-body-tertiary{% endif %}">
+
+          {# Icon badge #}
+          <div class="flex-shrink-0 mt-1">
+            <span class="badge rounded-circle p-2 {{ n.colour_class }}">
+              <i class="bi {{ n.icon }}" style="font-size:.85rem;"></i>
+            </span>
+          </div>
+
+          {# Body #}
+          <div class="flex-grow-1">
+            {% if n.link %}
+              <a href="{{ n.link }}" class="text-decoration-none text-reset fw-semibold">
+                {{ n.message }}
+              </a>
+            {% else %}
+              <span class="fw-semibold">{{ n.message }}</span>
+            {% endif %}
+            <div class="text-muted small mt-1">
+              <i class="bi bi-clock me-1"></i>{{ n.created_at|timesince }} ago
+            </div>
+          </div>
+
+          {# Unread dot #}
+          {% if not n.is_read %}
+            <div class="flex-shrink-0 mt-2">
+              <span class="badge rounded-pill bg-primary" style="font-size:.6rem;width:8px;height:8px;padding:0;">&nbsp;</span>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+{% else %}
+  <div class="bh-empty">
+    <i class="bi bi-bell-slash bh-empty-icon"></i>
+    <h5>No notifications yet</h5>
+    <p class="text-muted small mb-0">
+      You'll see updates here when you enrol in courses, submit assignments, or complete quizzes.
+    </p>
+  </div>
+{% endif %}
+
+{% endblock %}

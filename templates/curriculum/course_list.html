@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Courses — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<div class="text-center mb-4 pt-2">
+  <div class="bh-hero-eyebrow mb-2">All courses</div>
+  <h1 class="bh-section-title">The Bayt al-Hikma catalogue</h1>
+  <p class="bh-section-subtitle">
+    Filter by level, category, or age track. Click any course to see lessons and start.
+  </p>
+</div>
+
+<div class="row g-4">
+
+  {# ======================= Sidebar filters ======================= #}
+  <aside class="col-lg-3">
+    <form method="get" class="card border-0 bg-body-tertiary">
+      <div class="card-body">
+        <h6 class="text-uppercase text-muted small mb-3">Filter</h6>
+
+        {# Search #}
+        <div class="mb-3">
+          <label for="q" class="form-label small">Search</label>
+          <input type="search" id="q" name="q" value="{{ active.q }}"
+                 class="form-control form-control-sm"
+                 placeholder="Title or description...">
+        </div>
+
+        {# Level #}
+        <div class="mb-3">
+          <label for="level" class="form-label small">Level</label>
+          <select id="level" name="level" class="form-select form-select-sm">
+            <option value="">All levels</option>
+            {% for lvl in levels %}
+              <option value="{{ lvl.code }}"
+                      {% if active.level == lvl.code %}selected{% endif %}>
+                {{ lvl.code }} — {{ lvl.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {# Category #}
+        <div class="mb-3">
+          <label for="category" class="form-label small">Category</label>
+          <select id="category" name="category" class="form-select form-select-sm">
+            <option value="">All categories</option>
+            {% for c in categories %}
+              <option value="{{ c.slug }}"
+                      {% if active.category == c.slug %}selected{% endif %}>
+                {{ c.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        {# Track #}
+        <div class="mb-3">
+          <label for="track" class="form-label small">Age track</label>
+          <select id="track" name="track" class="form-select form-select-sm">
+            <option value="">All ages</option>
+            {% for value, label in tracks %}
+              <option value="{{ value }}"
+                      {% if active.track == value %}selected{% endif %}>
+                {{ label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          Apply filters
+        </button>
+        <a href="{% url 'curriculum:course_list' %}"
+           class="btn btn-link btn-sm w-100 mt-1">
+          Clear all
+        </a>
+      </div>
+    </form>
+  </aside>
+
+  {# ======================= Course grid ======================= #}
+  <section class="col-lg-9">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h3 mb-0">Courses</h1>
+      <span class="text-muted small">
+        {{ courses|length }} course{{ courses|length|pluralize }}
+      </span>
+    </div>
+
+    {% if courses %}
+      <div class="row g-4">
+        {% for course in courses %}
+          <div class="col-md-6 col-xl-4">
+            <a href="{% url 'curriculum:course_detail' course.slug %}"
+               class="text-decoration-none text-reset">
+              <article class="card course-card h-100">
+                {% if course.thumbnail %}
+                  <img src="{{ course.thumbnail.url }}" alt=""
+                       class="course-thumb card-img-top">
+                {% else %}
+                  {# SVG fallback thumbnail — branded, no broken-link risk #}
+                  <div class="course-thumb position-relative">
+                    <svg viewBox="0 0 320 180"
+                         xmlns="http://www.w3.org/2000/svg"
+                         preserveAspectRatio="xMidYMid slice"
+                         style="width:100%; height:100%; display:block;">
+                      <!-- Geometric pattern background -->
+                      <defs>
+                        <pattern id="geo-{{ course.id }}" x="0" y="0"
+                                 width="40" height="40"
+                                 patternUnits="userSpaceOnUse">
+                          <path d="M20 0 L40 20 L20 40 L0 20 Z"
+                                fill="none"
+                                stroke="rgba(47,122,90,0.12)"
+                                stroke-width="1"/>
+                        </pattern>
+                      </defs>
+                      <rect width="320" height="180"
+                            fill="url(#geo-{{ course.id }})"/>
+
+                      <!-- Big level badge centered -->
+                      {% if course.level %}
+                        <text x="160" y="115" text-anchor="middle"
+                              font-family="Cairo, 'Amiri', serif"
+                              font-size="86" font-weight="800"
+                              fill="var(--bh-green-700)" opacity="0.85">
+                          {{ course.level.code }}
+                        </text>
+                      {% else %}
+                        <text x="160" y="105" text-anchor="middle"
+                              font-family="Cairo, 'Amiri', serif"
+                              font-size="40" font-weight="700"
+                              fill="var(--bh-gold-700)">OPEN</text>
+                        <text x="160" y="135" text-anchor="middle"
+                              font-family="Cairo, 'Amiri', serif"
+                              font-size="14"
+                              fill="var(--bh-green-700)" opacity="0.7">
+                          NO PREREQUISITE
+                        </text>
+                      {% endif %}
+
+                      <!-- Tiny gold accent dot top-right -->
+                      <circle cx="295" cy="25" r="4" fill="var(--bh-gold-500)"/>
+                      <circle cx="295" cy="25" r="9"
+                              fill="none" stroke="var(--bh-gold-300)"
+                              stroke-width="1"/>
+                    </svg>
+                  </div>
+                {% endif %}
+
+                <div class="card-body">
+                  <div class="d-flex gap-1 flex-wrap mb-2">
+                    {% if course.level %}
+                      <span class="badge text-bg-primary">
+                        {{ course.level.code }}
+                      </span>
+                    {% else %}
+                      <span class="badge text-bg-success">Open</span>
+                    {% endif %}
+                    <span class="badge text-bg-light border">
+                      {{ course.category.name }}
+                    </span>
+                    {% if course.track != 'all' %}
+                      <span class="badge text-bg-info">
+                        {{ course.get_track_display }}
+                      </span>
+                    {% endif %}
+                  </div>
+
+                  <h5 class="card-title mb-1">{{ course.title }}</h5>
+                  <p class="card-text small text-muted">
+                    {{ course.description|truncatewords:18 }}
+                  </p>
+                </div>
+
+                <div class="card-footer bg-transparent small text-muted">
+                  <i class="bi bi-mortarboard me-1"></i>
+                  {{ course.teacher.first_name|default:course.teacher.email }}
+                </div>
+              </article>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-5">
+        <svg viewBox="0 0 200 160" xmlns="http://www.w3.org/2000/svg"
+             style="width:200px; height:auto; opacity: 0.85;">
+          <!-- Open scroll/book -->
+          <rect x="40" y="50" width="120" height="80" rx="6"
+                fill="var(--bh-cream)" stroke="var(--bh-gold-300)"
+                stroke-width="2"/>
+          <line x1="100" y1="50" x2="100" y2="130"
+                stroke="var(--bh-gold-300)" stroke-width="2"/>
+          <line x1="55" y1="70" x2="90" y2="70"
+                stroke="var(--bh-green-100)" stroke-width="2"/>
+          <line x1="55" y1="80" x2="85" y2="80"
+                stroke="var(--bh-green-100)" stroke-width="2"/>
+          <line x1="55" y1="90" x2="90" y2="90"
+                stroke="var(--bh-green-100)" stroke-width="2"/>
+          <line x1="110" y1="70" x2="145" y2="70"
+                stroke="var(--bh-green-100)" stroke-width="2"/>
+          <line x1="110" y1="80" x2="140" y2="80"
+                stroke="var(--bh-green-100)" stroke-width="2"/>
+          <line x1="110" y1="90" x2="145" y2="90"
+                stroke="var(--bh-green-100)" stroke-width="2"/>
+
+          <!-- Magnifier -->
+          <circle cx="135" cy="115" r="22"
+                  fill="rgba(255,255,255,0.9)"
+                  stroke="var(--bh-green-700)" stroke-width="3"/>
+          <line x1="151" y1="131" x2="168" y2="148"
+                stroke="var(--bh-green-700)"
+                stroke-width="4" stroke-linecap="round"/>
+          <text x="135" y="123" text-anchor="middle"
+                font-family="Cairo, serif" font-size="22"
+                fill="var(--bh-gold-500)">؟</text>
+        </svg>
+        <p class="lead mt-3 mb-1">No courses match those filters.</p>
+        <p class="text-muted small mb-3">Try widening the search or clearing the filters.</p>
+        <a href="{% url 'curriculum:course_list' %}"
+           class="btn btn-outline-primary">Clear filters</a>
+      </div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

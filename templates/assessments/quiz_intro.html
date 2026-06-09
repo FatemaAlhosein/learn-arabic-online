@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quiz.title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <span class="badge text-bg-secondary">
+      {{ quiz.get_kind_display }}
+    </span>
+    <h1 class="mt-2 mb-3">{{ quiz.title }}</h1>
+
+    {% if quiz.description %}
+      <p class="lead">{{ quiz.description }}</p>
+    {% endif %}
+
+    <dl class="row small text-muted mt-4">
+      <dt class="col-sm-4">Questions</dt>
+      <dd class="col-sm-8">{{ question_count }}</dd>
+
+      <dt class="col-sm-4">Pass threshold</dt>
+      <dd class="col-sm-8">{{ quiz.pass_threshold }}%</dd>
+
+      <dt class="col-sm-4">Time limit</dt>
+      <dd class="col-sm-8">
+        {% if quiz.time_limit_minutes %}
+          {{ quiz.time_limit_minutes }} min
+        {% else %}
+          No limit
+        {% endif %}
+      </dd>
+    </dl>
+
+    {# Start / Resume button #}
+    <form method="post"
+          action="{% url 'assessments:start_quiz' quiz.id %}"
+          class="mt-4">
+      {% csrf_token %}
+      {% if in_progress %}
+        <button type="submit" class="btn btn-warning btn-lg">
+          <i class="bi bi-arrow-clockwise me-1"></i>Resume attempt
+        </button>
+        <p class="text-muted small mt-2 mb-0">
+          You have an attempt in progress, started
+          {{ in_progress.started_at|timesince }} ago.
+        </p>
+      {% else %}
+        <button type="submit" class="btn btn-primary btn-lg">
+          <i class="bi bi-play-fill me-1"></i>Start quiz
+        </button>
+      {% endif %}
+    </form>
+
+    {# Past attempts #}
+    {% if past_attempts %}
+      <h2 class="h5 mt-5 mb-3">Your past attempts</h2>
+      <ul class="list-group">
+        {% for s in past_attempts %}
+          <li class="list-group-item d-flex justify-content-between
+                     align-items-center">
+            <div>
+              <span class="text-muted small">{{ s.started_at|date:"M j, Y" }}</span>
+              <span class="ms-2">
+                {% if s.passed is True %}
+                  <span class="badge text-bg-success">Passed</span>
+                {% elif s.passed is False %}
+                  <span class="badge text-bg-danger">Did not pass</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">{{ s.get_status_display }}</span>
+                {% endif %}
+              </span>
+              {% if s.score is not None %}
+                <span class="ms-2 small">{{ s.score }}%</span>
+              {% endif %}
+            </div>
+            <a href="{% url 'assessments:submission_result' s.id %}"
+               class="btn btn-sm btn-outline-secondary">
+              View
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

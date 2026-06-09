@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    {% if assignment %}
+      <li class="breadcrumb-item">
+        <a href="{% url 'assignments:submission_list' assignment.id %}">{{ assignment.title }}</a>
+      </li>
+    {% endif %}
+    <li class="breadcrumb-item active">{{ page_title }}</li>
+  </ol>
+</nav>
+
+<h1 class="h3 mb-4">{{ page_title }}</h1>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="row g-4">
+
+    {# ── Sidebar: settings ── #}
+    <div class="col-lg-4 order-lg-2">
+      <div class="card sticky-lg-top" style="top:1rem;">
+        <div class="card-header fw-semibold">Assignment settings</div>
+        <div class="card-body">
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold small text-uppercase text-muted">Attach to</label>
+            <div class="mb-2" id="lesson-field">
+              <label class="form-label fw-semibold">Lesson</label>
+              {{ form.lesson }}
+            </div>
+            <div class="text-center text-muted small mb-2">— or —</div>
+            <div id="course-field">
+              <label class="form-label fw-semibold">Course (whole-course assignment)</label>
+              {{ form.course }}
+            </div>
+            {% if form.lesson.errors or form.course.errors %}
+              <div class="text-danger small mt-1">{{ form.lesson.errors }} {{ form.course.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.due_date.label }}</label>
+            {{ form.due_date }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">
+              Max score
+              <span class="fw-normal text-muted">(default 100)</span>
+            </label>
+            {{ form.max_score }}
+          </div>
+
+          <div class="mb-2 form-check">
+            {{ form.allow_text_response }}
+            <label class="form-check-label" for="{{ form.allow_text_response.id_for_label }}">
+              {{ form.allow_text_response.label }}
+            </label>
+          </div>
+
+          <div class="mb-3 form-check">
+            {{ form.allow_file_upload }}
+            <label class="form-check-label" for="{{ form.allow_file_upload.id_for_label }}">
+              {{ form.allow_file_upload.label }}
+            </label>
+          </div>
+
+          <div class="mb-3 form-check">
+            {{ form.is_published }}
+            <label class="form-check-label" for="{{ form.is_published.id_for_label }}">
+              {{ form.is_published.label }}
+            </label>
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger small">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="d-grid gap-2 mt-3">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>
+              {% if mode == "edit" %}Save changes{% else %}Create assignment{% endif %}
+            </button>
+            {% if assignment %}
+              <a href="{% url 'assignments:submission_list' assignment.id %}"
+                 class="btn btn-outline-secondary">Cancel</a>
+            {% else %}
+              <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {# ── Main: content ── #}
+    <div class="col-lg-8 order-lg-1">
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">Assignment details</div>
+        <div class="card-body">
+
+          <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label fw-semibold">
+              Title <span class="text-danger">*</span>
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}
+              <div class="invalid-feedback d-block">{{ form.title.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+              {{ form.description.label }}
+            </label>
+            {{ form.description }}
+            <div class="form-text">Shown as a brief teaser in the lesson/course page.</div>
+          </div>
+
+          <div class="mb-0">
+            <label for="{{ form.instructions.id_for_label }}" class="form-label fw-semibold">
+              {{ form.instructions.label }} <span class="text-danger">*</span>
+            </label>
+            {{ form.instructions }}
+            <div class="form-text">Full task description. Supports Markdown.</div>
+            {% if form.instructions.errors %}
+              <div class="invalid-feedback d-block">{{ form.instructions.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</form>
+
+{% endblock %}

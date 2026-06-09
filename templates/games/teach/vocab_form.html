@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:vocab_list' %}">Game Vocabulary</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div class="bh-feature-icon"><i class="bi bi-translate"></i></div>
+  <h1 class="h3 mb-0">{{ title }}</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      {# ── Core word ── #}
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-translate me-1"></i>Word details</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Arabic <span class="text-danger">*</span></label>
+              {{ form.arabic }}
+              {% if form.arabic.errors %}<div class="text-danger small mt-1">{{ form.arabic.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">English <span class="text-danger">*</span></label>
+              {{ form.english }}
+              {% if form.english.errors %}<div class="text-danger small mt-1">{{ form.english.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Emoji</label>
+              {{ form.emoji }}
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Phonetic</label>
+              {{ form.phonetic }}
+              <div class="form-text">Romanised pronunciation, e.g. kitāb</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Curriculum ── #}
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-mortarboard me-1"></i>Curriculum link</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Level</label>
+              {{ form.level }}
+              <div class="form-text">Games filter words by student level.</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Course (optional)</label>
+              {{ form.course }}
+              <div class="form-text">Pin to a specific course if needed.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Word Builder tiles ── #}
+      <div class="card mb-4">
+        <div class="card-header">
+          <i class="bi bi-grid-3x2-gap me-1"></i>Word Builder tiles
+          <span class="text-muted fw-normal small ms-1">— only needed for the Word Builder game</span>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">{{ form.letters_input.label }}</label>
+              {{ form.letters_input }}
+              <div class="form-text">{{ form.letters_input.help_text }}</div>
+              {% if form.letters_input.errors %}<div class="text-danger small mt-1">{{ form.letters_input.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-12">
+              <label class="form-label">{{ form.context_forms_input.label }}</label>
+              {{ form.context_forms_input }}
+              <div class="form-text">{{ form.context_forms_input.help_text }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Missing Letter ── #}
+      <div class="card mb-4">
+        <div class="card-header">
+          <i class="bi bi-question-circle me-1"></i>Missing Letter game
+          <span class="text-muted fw-normal small ms-1">— only needed for the Missing Letter game</span>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Missing letter index</label>
+              {{ form.missing_index }}
+              <div class="form-text">0 = first letter, 1 = second letter, etc.</div>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">{{ form.wrong_choices_input.label }}</label>
+              {{ form.wrong_choices_input }}
+              <div class="form-text">{{ form.wrong_choices_input.help_text }}</div>
+              {% if form.wrong_choices_input.errors %}<div class="text-danger small mt-1">{{ form.wrong_choices_input.errors|join:", " }}</div>{% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Status + actions ── #}
+      <div class="card mb-4">
+        <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+          <div class="form-check">
+            {{ form.is_active }}
+            <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
+              Active (visible in games)
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-1"></i>Save word
+        </button>
+        {% if not word %}
+          <button type="submit" name="add_another" class="btn btn-outline-primary">
+            <i class="bi bi-plus-circle me-1"></i>Save & add another
+          </button>
+        {% endif %}
+        <a href="{% url 'games:vocab_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.css">
+<style>
+  /* Brand-colour overrides for EasyMDE */
+  .EasyMDEContainer .CodeMirror {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    min-height: 420px;
+    border-radius: 0 0 0.4rem 0.4rem;
+  }
+  .editor-toolbar {
+    border-color: #c8d8c0;
+    border-radius: 0.4rem 0.4rem 0 0;
+    background: #f9fbf9;
+  }
+  .editor-toolbar button:hover,
+  .editor-toolbar button.active {
+    background: #d8ebe1;
+    border-color: #2f7a5a;
+    color: #143e2c;
+  }
+  .editor-toolbar i.separator { border-color: #c8d8c0; }
+  .EasyMDEContainer .CodeMirror-scroll { min-height: 420px; }
+  .editor-preview, .editor-preview-side {
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+  .editor-preview h1, .editor-preview h2,
+  .editor-preview-side h1, .editor-preview-side h2 { color: #143e2c; }
+  .editor-preview blockquote, .editor-preview-side blockquote {
+    border-left: 4px solid #c89b3c;
+    background: #fdf6e3;
+    padding: 0.5rem 0.85rem;
+    color: #6b4f17;
+  }
+  .editor-preview table th, .editor-preview-side table th {
+    background: #2f7a5a; color: #fff;
+  }
+  .editor-preview table td, .editor-preview-side table td {
+    border: 1px solid #d8ebe1;
+  }
+
+  /* Colour-dot toolbar buttons — pure CSS, no Font Awesome needed */
+  .editor-toolbar .bh-color-btn::before {
+    content: "●";
+    font-family: sans-serif;
+    font-style: normal;
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+  .editor-toolbar .bh-color-red::before   { color: #c0392b; }
+  .editor-toolbar .bh-color-green::before { color: #2f7a5a; }
+  .editor-toolbar .bh-color-gold::before  { color: #c89b3c; }
+  .editor-toolbar .bh-color-blue::before  { color: #1a6fa8; }
+
+  /* AR / EN direction toggle button — text label, no FA icon */
+  .editor-toolbar .bh-dir-btn {
+    font-family: monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #2f7a5a !important;
+    padding: 0 6px;
+    min-width: 30px;
+  }
+  .editor-toolbar .bh-dir-btn::before { content: "AR"; }
+  .editor-toolbar .bh-dir-btn.rtl-active::before { content: "EN"; color: #c89b3c !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# ── Breadcrumb ─────────────────────────────────────────────────────── #}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'curriculum:course_manage' course.slug %}">{{ course.title }}</a>
+    </li>
+    {% if mode == "edit" and lesson %}
+      <li class="breadcrumb-item active">Edit lesson</li>
+    {% else %}
+      <li class="breadcrumb-item active">Add lesson</li>
+    {% endif %}
+  </ol>
+</nav>
+
+<h1 class="h3 mb-4">{{ page_title }}</h1>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  <div class="row g-4">
+
+    {# ── Left column: core fields ─────────────────────────────────────── #}
+    <div class="col-lg-4 order-lg-2">
+
+      <div class="card sticky-lg-top" style="top:1rem;">
+        <div class="card-header fw-semibold">Lesson settings</div>
+        <div class="card-body">
+
+          {# Title #}
+          <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label fw-semibold">
+              Title <span class="text-danger">*</span>
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}
+              <div class="invalid-feedback d-block">{{ form.title.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {# Order #}
+          <div class="mb-3">
+            <label for="{{ form.order.id_for_label }}" class="form-label fw-semibold">
+              Order <span class="text-danger">*</span>
+            </label>
+            {{ form.order }}
+            <div class="form-text">Position within the course (1 = first).</div>
+            {% if form.order.errors %}
+              <div class="invalid-feedback d-block">{{ form.order.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {# Duration #}
+          <div class="mb-3">
+            <label for="{{ form.duration_minutes.id_for_label }}" class="form-label fw-semibold">
+              {{ form.duration_minutes.label }}
+            </label>
+            {{ form.duration_minutes }}
+            {% if form.duration_minutes.errors %}
+              <div class="invalid-feedback d-block">{{ form.duration_minutes.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {# Free preview #}
+          <div class="mb-3">
+            <div class="form-check">
+              {{ form.is_free_preview }}
+              <label class="form-check-label" for="{{ form.is_free_preview.id_for_label }}">
+                {{ form.is_free_preview.label }}
+              </label>
+            </div>
+            <div class="form-text">Free preview lessons are viewable without enrolment.</div>
+          </div>
+
+          {# Video embed URL #}
+          <div class="mb-3">
+            <label for="{{ form.primary_video_url.id_for_label }}" class="form-label fw-semibold">
+              {{ form.primary_video_url.label }}
+            </label>
+            {{ form.primary_video_url }}
+            <div class="form-text">{{ form.primary_video_url.help_text }}</div>
+            {% if form.primary_video_url.errors %}
+              <div class="invalid-feedback d-block">{{ form.primary_video_url.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {# Video file upload #}
+          <div class="mb-3">
+            <label for="{{ form.video_file.id_for_label }}" class="form-label fw-semibold">
+              {{ form.video_file.label }}
+            </label>
+            {% if mode == "edit" and lesson.video_file %}
+              <div class="small text-muted mb-1">
+                <i class="bi bi-camera-video me-1"></i>
+                <a href="{{ lesson.video_file.url }}" target="_blank">Current video file</a>
+              </div>
+            {% endif %}
+            {{ form.video_file }}
+            <div class="form-text">{{ form.video_file.help_text }}</div>
+          </div>
+
+          {# Non-field errors #}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          {# Save / Cancel #}
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>
+              {% if mode == "edit" %}Save changes{% else %}Add lesson{% endif %}
+            </button>
+            <a href="{% url 'curriculum:course_manage' course.slug %}"
+               class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {# ── Right column: markdown editor ───────────────────────────────── #}
+    <div class="col-lg-8 order-lg-1">
+      <label class="form-label fw-semibold">Lesson content</label>
+      <div class="form-text mb-2">
+        Use the toolbar to format text. Click <strong>Preview</strong> to see
+        how it renders, <strong>Side by Side</strong> for a split view, or
+        the arrows icon for fullscreen.
+      </div>
+      {{ form.body_markdown }}
+      {% if form.body_markdown.errors %}
+        <div class="invalid-feedback d-block mt-1">{{ form.body_markdown.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_scripts %}
+{# jsDelivr is more reliable than cdnjs for local dev environments #}
+<script src="https://cdn.jsdelivr.net/npm/easymde@2.18.0/dist/easymde.min.js"></script>
+<script>
+  {# Script is at bottom of page — DOM is already ready, no DOMContentLoaded needed #}
+  (function () {
+    var textarea = document.getElementById("id_body_markdown");
+    if (!textarea || typeof EasyMDE === "undefined") return;
+
+    /* ── Helper: wrap selected text (or placeholder) in a tag ── */
+    function wrapSelection(editor, open, close, placeholder) {
+      var cm = editor.codemirror;
+      var sel = cm.getSelection();
+      cm.replaceSelection(open + (sel || placeholder || "text") + close);
+    }
+
+    /* ── Helper: colour-span button factory ── */
+    function colorBtn(name, hex, label) {
+      return {
+        name: name,
+        action: function(editor) {
+          var cm = editor.codemirror;
+          var sel = cm.getSelection();
+          if (!sel) {
+            /* Nothing selected — try to grab the word under the cursor */
+            var cur  = cm.getCursor();
+            var word = cm.findWordAt(cur);
+            sel = cm.getRange(word.anchor, word.head);
+            if (sel) {
+              cm.setSelection(word.anchor, word.head);
+            }
+          }
+          if (sel) {
+            cm.replaceSelection('<span style="color:' + hex + '">' + sel + '</span>');
+          } else {
+            /* Blank line — insert a placeholder and leave cursor inside */
+            var cur = cm.getCursor();
+            var snippet = '<span style="color:' + hex + '">type here</span>';
+            cm.replaceRange(snippet, cur);
+          }
+        },
+        /* No FA class — pure CSS coloured dot via ::before */
+        className: "bh-color-btn bh-color-" + name,
+        title: label + " colour (select text or click on a word)",
+      };
+    }
+
+    /* ── Direction toggle: LTR (English) ↔ RTL (Arabic) ── */
+    var isRtl = false;
+    var dirBtn = {
+      name: "toggle-dir",
+      action: function(editor) {
+        isRtl = !isRtl;
+        var cm = editor.codemirror;
+        var wrapper = cm.getWrapperElement();
+        var btn = document.querySelector('.editor-toolbar .bh-dir-btn');
+        if (isRtl) {
+          wrapper.style.direction  = "rtl";
+          wrapper.style.textAlign  = "right";
+          wrapper.style.fontFamily = "'Amiri', 'Scheherazade New', 'Arial Unicode MS', serif";
+          wrapper.style.fontSize   = "1.25rem";
+          wrapper.style.lineHeight = "2";
+          if (btn) { btn.classList.add("rtl-active"); btn.title = "Switch to English (LTR)"; }
+        } else {
+          wrapper.style.direction  = "ltr";
+          wrapper.style.textAlign  = "left";
+          wrapper.style.fontFamily = "";
+          wrapper.style.fontSize   = "";
+          wrapper.style.lineHeight = "";
+          if (btn) { btn.classList.remove("rtl-active"); btn.title = "Switch to Arabic (RTL)"; }
+        }
+        cm.refresh();
+      },
+      className: "bh-dir-btn",   /* no fa icon — we render text via CSS */
+      title: "Switch to Arabic (RTL)",
+      attributes: { "data-name": "toggle-dir", "aria-label": "AR" },
+    };
+
+    new EasyMDE({
+      element: textarea,
+      spellChecker: false,
+      autosave: { enabled: false },
+      minHeight: "420px",
+      placeholder: "Write your lesson content here…",
+      toolbar: [
+        /* ── Text style ── */
+        "bold", "italic",
+        {
+          name: "strikethrough",
+          action: function(e){ wrapSelection(e, "~~", "~~", "strikethrough"); },
+          className: "fa fa-strikethrough",
+          title: "Strikethrough",
+        },
+        "heading", "|",
+
+        /* ── Block elements ── */
+        "code", "quote", "horizontal-rule", "|",
+        "unordered-list", "ordered-list", "|",
+
+        /* ── Media & links ── */
+        "link", "image", "table", "|",
+
+        /* ── Colour buttons ── */
+        colorBtn("red",   "#c0392b", "Red"),
+        colorBtn("green", "#2f7a5a", "Green"),
+        colorBtn("gold",  "#c89b3c", "Gold"),
+        colorBtn("blue",  "#1a6fa8", "Blue"),
+        "|",
+
+        /* ── Direction toggle ── */
+        dirBtn,
+        "|",
+
+        /* ── View ── */
+        "preview", "side-by-side", "fullscreen", "|",
+        "guide",
+      ],
+      previewClass: ["editor-preview", "prose"],
+      status: ["lines", "words"],
+    });
+  })();
+</script>
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up — {{ SITE_NAME }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* Hide the age-track row when role != student. JS toggles this class. */
+  .age-track-row.d-none-when-not-student { display: none; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7 col-lg-6">
+    <div class="card mt-4">
+      <div class="card-body p-4">
+        <h1 class="h3 mb-1 text-center">Create your account</h1>
+        <p class="text-muted text-center small mb-4">
+          Free. No card required.
+        </p>
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+
+          {# ----- Role (radio) ----- #}
+          <fieldset class="mb-4">
+            <legend class="form-label fs-6">{{ form.role.label }}</legend>
+            {% for radio in form.role %}
+              <div class="form-check">
+                {{ radio.tag }}
+                <label class="form-check-label" for="{{ radio.id_for_label }}">
+                  {{ radio.choice_label }}
+                </label>
+              </div>
+            {% endfor %}
+            {% if form.role.errors %}
+              <div class="text-danger small">{{ form.role.errors|join:", " }}</div>
+            {% endif %}
+          </fieldset>
+
+          {# ----- Age track (only relevant for students; toggled by JS) ----- #}
+          <div class="mb-3 age-track-row">
+            <label for="id_age_track" class="form-label">
+              {{ form.age_track.label }}
+            </label>
+            <select name="age_track" id="id_age_track"
+                    class="form-select {% if form.age_track.errors %}is-invalid{% endif %}">
+              {% for value, label in form.age_track.field.choices %}
+                <option value="{{ value }}"
+                        {% if form.age_track.value == value %}selected{% endif %}>
+                  {{ label }}
+                </option>
+              {% endfor %}
+            </select>
+            <div class="form-text">{{ form.age_track.help_text }}</div>
+            {% if form.age_track.errors %}
+              <div class="invalid-feedback">{{ form.age_track.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {# ----- Name + email ----- #}
+          <div class="row g-2 mb-3">
+            <div class="col">
+              <label for="id_first_name" class="form-label">First name</label>
+              <input type="text" name="first_name" id="id_first_name"
+                     class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+                     value="{{ form.first_name.value|default:'' }}"
+                     autocomplete="given-name" required>
+            </div>
+            <div class="col">
+              <label for="id_last_name" class="form-label">
+                Last name <span class="text-muted">(optional)</span>
+              </label>
+              <input type="text" name="last_name" id="id_last_name"
+                     class="form-control {% if form.last_name.errors %}is-invalid{% endif %}"
+                     value="{{ form.last_name.value|default:'' }}"
+                     autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="id_email" class="form-label">Email</label>
+            <input type="email" name="email" id="id_email"
+                   class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                   value="{{ form.email.value|default:'' }}"
+                   autocomplete="email" required>
+            {% if form.email.errors %}
+              <div class="invalid-feedback">{{ form.email.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {# ----- Passwords (UserCreationForm provides password1 + password2) ----- #}
+          <div class="mb-3">
+            <label for="id_password1" class="form-label">Password</label>
+            <input type="password" name="password1" id="id_password1"
+                   class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                   autocomplete="new-password" required>
+            {% if form.password1.help_text %}
+              <div class="form-text small">{{ form.password1.help_text|safe }}</div>
+            {% endif %}
+            {% if form.password1.errors %}
+              <div class="invalid-feedback">{{ form.password1.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label for="id_password2" class="form-label">Confirm password</label>
+            <input type="password" name="password2" id="id_password2"
+                   class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                   autocomplete="new-password" required>
+            {% if form.password2.errors %}
+              <div class="invalid-feedback">{{ form.password2.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-person-plus-fill me-1"></i>Create account
+          </button>
+        </form>
+
+        <hr class="my-4">
+        <p class="text-center small mb-0">
+          Already have an account?
+          <a href="{% url 'login' %}" class="text-decoration-none">Sign in</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Hide the age-track row when role != student.
+  (function () {
+    const ageRow = document.querySelector('.age-track-row');
+    const roleRadios = document.querySelectorAll('input[name="role"]');
+
+    function toggle() {
+      const checked = document.querySelector('input[name="role"]:checked');
+      const isStudent = checked && checked.value === 'student';
+      ageRow.classList.toggle('d-none-when-not-student', !isStudent);
+    }
+    roleRadios.forEach(r => r.addEventListener('change', toggle));
+    toggle();  // initial state
+  })();
+</script>
+{% endblock %}

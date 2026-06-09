@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}My profile — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">My profile</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1 class="h3 mb-0">My profile</h1>
+  <a href="{% url 'password_change' %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-key me-1"></i>Change password
+  </a>
+</div>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  <div class="row g-4">
+
+    {# ── Left: avatar + level card ── #}
+    <div class="col-lg-4 order-lg-2">
+      <div class="card sticky-lg-top" style="top: 1rem;">
+        <div class="card-body text-center py-4">
+
+          {# Avatar preview #}
+          {% if profile_instance and profile_instance.avatar %}
+            <img src="{{ profile_instance.avatar.url }}"
+                 class="rounded-circle mb-3 border"
+                 width="96" height="96"
+                 style="object-fit:cover;" alt="Profile photo">
+          {% else %}
+            <div class="rounded-circle bg-body-tertiary d-inline-flex
+                        align-items-center justify-content-center mb-3 border"
+                 style="width:96px; height:96px;">
+              <i class="bi bi-person fs-1 text-muted"></i>
+            </div>
+          {% endif %}
+
+          <div class="fw-semibold fs-5">
+            {{ user.first_name|default:user.email }}
+            {% if user.last_name %} {{ user.last_name }}{% endif %}
+          </div>
+          <div class="small text-muted mb-3">{{ user.email }}</div>
+          <span class="badge text-bg-primary">{{ user.get_role_display }}</span>
+
+          {# Level badge for students #}
+          {% if user.is_student and profile_instance %}
+            <hr>
+            <div class="text-muted small text-uppercase mb-1">Current level</div>
+            {% if profile_instance.current_level %}
+              <div class="fs-4 fw-bold">
+                {{ profile_instance.current_level.code }}
+                <small class="text-muted fs-6">{{ profile_instance.current_level.name }}</small>
+              </div>
+            {% else %}
+              <div class="text-warning fw-semibold mb-2">Not set</div>
+              {% if placement_quiz %}
+                <a href="{% url 'assessments:quiz_intro' placement_quiz.id %}"
+                   class="btn btn-warning btn-sm w-100">
+                  <i class="bi bi-clipboard-check me-1"></i>Take placement test
+                </a>
+              {% else %}
+                <div class="small text-muted">Placement test not yet available.</div>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+
+          {# Teacher approval status #}
+          {% if user.is_teacher and profile_instance %}
+            <hr>
+            {% if profile_instance.is_approved %}
+              <span class="badge text-bg-success">
+                <i class="bi bi-check-circle-fill me-1"></i>Approved teacher
+              </span>
+            {% else %}
+              <span class="badge text-bg-warning">Awaiting admin approval</span>
+              <div class="small text-muted mt-1">
+                You can create courses now; they'll be visible once approved.
+              </div>
+            {% endif %}
+          {% endif %}
+
+        </div>
+      </div>
+    </div>
+
+    {# ── Right: edit forms ── #}
+    <div class="col-lg-8 order-lg-1">
+
+      {# ── Name ── #}
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">Basic information</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="{{ user_form.first_name.id_for_label }}"
+                     class="form-label fw-semibold">First name</label>
+              {{ user_form.first_name }}
+              {% if user_form.first_name.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ user_form.first_name.errors|join:", " }}
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-6">
+              <label for="{{ user_form.last_name.id_for_label }}"
+                     class="form-label fw-semibold">Last name</label>
+              {{ user_form.last_name }}
+              {% if user_form.last_name.errors %}
+                <div class="invalid-feedback d-block">
+                  {{ user_form.last_name.errors|join:", " }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label fw-semibold">Email</label>
+            <input type="email" class="form-control" value="{{ user.email }}"
+                   disabled title="Email cannot be changed here">
+            <div class="form-text">Contact support to change your email address.</div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Role-specific profile fields ── #}
+      {% if profile_form %}
+        <div class="card mb-4">
+          <div class="card-header fw-semibold">
+            {% if user.is_student %}Student details
+            {% elif user.is_teacher %}Teacher details
+            {% else %}Account details{% endif %}
+          </div>
+          <div class="card-body">
+
+            {% if user.is_student %}
+              {# Age group — read-only, auto-set from date of birth #}
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Age group</label>
+                <div class="d-flex align-items-center gap-2">
+                  {% if profile_instance.age_track == "kids" %}
+                    <span class="badge text-bg-success fs-6">
+                      <i class="bi bi-emoji-smile me-1"></i>Kids (under 12)
+                    </span>
+                  {% elif profile_instance.age_track == "teen" %}
+                    <span class="badge text-bg-info fs-6">
+                      <i class="bi bi-person me-1"></i>Teen (12–17)
+                    </span>
+                  {% else %}
+                    <span class="badge text-bg-secondary fs-6">
+                      <i class="bi bi-person-fill me-1"></i>Adult (18+)
+                    </span>
+                  {% endif %}
+                  <span class="text-muted small">
+                    Auto-set from your date of birth. Contact your parent or admin to change it.
+                  </span>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="{{ profile_form.native_language.id_for_label }}"
+                       class="form-label fw-semibold">Native language</label>
+                {{ profile_form.native_language }}
+              </div>
+              <div class="mb-3">
+                <label for="{{ profile_form.date_of_birth.id_for_label }}"
+                       class="form-label fw-semibold">Date of birth</label>
+                {{ profile_form.date_of_birth }}
+                <div class="form-text">Updating your date of birth will automatically update your age group.</div>
+              </div>
+            {% endif %}
+
+            {% if user.is_teacher %}
+              <div class="mb-3">
+                <label for="{{ profile_form.specialization.id_for_label }}"
+                       class="form-label fw-semibold">Specialization</label>
+                {{ profile_form.specialization }}
+              </div>
+              <div class="mb-3">
+                <label for="{{ profile_form.years_of_experience.id_for_label }}"
+                       class="form-label fw-semibold">Years of experience</label>
+                {{ profile_form.years_of_experience }}
+              </div>
+              <div class="mb-3">
+                <label for="{{ profile_form.bio.id_for_label }}"
+                       class="form-label fw-semibold">Bio</label>
+                {{ profile_form.bio }}
+                <div class="form-text">Shown to students on the course page.</div>
+              </div>
+            {% endif %}
+
+            {% if user.is_parent %}
+              <div class="mb-3">
+                <label for="{{ profile_form.phone.id_for_label }}"
+                       class="form-label fw-semibold">Phone number</label>
+                {{ profile_form.phone }}
+              </div>
+            {% endif %}
+
+            {# Avatar for any role #}
+            <div class="mb-3">
+              <label for="{{ profile_form.avatar.id_for_label }}"
+                     class="form-label fw-semibold">Profile photo</label>
+              {% if profile_instance and profile_instance.avatar %}
+                <div class="small text-muted mb-1">
+                  <i class="bi bi-image me-1"></i>
+                  <a href="{{ profile_instance.avatar.url }}"
+                     target="_blank">Current photo</a>
+                </div>
+              {% endif %}
+              {{ profile_form.avatar }}
+              <div class="form-text">JPG or PNG, max 2 MB.</div>
+            </div>
+
+          </div>
+        </div>
+      {% endif %}
+
+      <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-1"></i>Save changes
+        </button>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+
+    </div>
+  </div>
+</form>
+
+{% endblock %}

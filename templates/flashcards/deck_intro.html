@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}{{ deck.title }} — Flashcards{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item">
+      <a href="{% url 'curriculum:course_list' %}">Courses</a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'curriculum:course_detail' deck.lesson.course.slug %}">
+        {{ deck.lesson.course.title|truncatechars:32 }}
+      </a>
+    </li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'curriculum:lesson_detail' deck.lesson.course.slug deck.lesson.slug %}">
+        {{ deck.lesson.title|truncatechars:32 }}
+      </a>
+    </li>
+    <li class="breadcrumb-item active">Flashcards</li>
+  </ol>
+</nav>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <span class="badge text-bg-light border">
+      <i class="bi bi-card-text me-1"></i>Flashcard deck
+    </span>
+    <h1 class="mt-2 mb-2">{{ deck.title }}</h1>
+
+    {% if deck.description %}
+      <p class="lead">{{ deck.description }}</p>
+    {% endif %}
+
+    <div class="row g-3 my-4">
+      <div class="col-md-4">
+        <div class="card bh-stat-card">
+          <div class="card-body">
+            <div class="text-muted small text-uppercase mb-1">
+              <i class="bi bi-collection me-1"></i>Total cards
+            </div>
+            <div class="fs-3 fw-semibold">{{ total }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bh-stat-card">
+          <div class="card-body">
+            <div class="text-muted small text-uppercase mb-1">
+              <i class="bi bi-eye me-1"></i>Seen
+            </div>
+            <div class="fs-3 fw-semibold">{{ seen_count }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card bh-stat-card">
+          <div class="card-body">
+            <div class="text-muted small text-uppercase mb-1">
+              <i class="bi bi-trophy me-1"></i>Mastered
+            </div>
+            <div class="fs-3 fw-semibold">{{ mastered_count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if total > 0 %}
+      <div class="progress mb-4" style="height: .5rem;">
+        {% widthratio mastered_count total 100 as mastery_pct %}
+        <div class="progress-bar" role="progressbar"
+             style="width: {{ mastery_pct }}%;"
+             aria-valuenow="{{ mastery_pct }}"
+             aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+    {% endif %}
+
+    <div class="d-flex gap-2 flex-wrap">
+      {% if cards %}
+        <a href="{% url 'flashcards:study_session' deck.id %}?i=0"
+           class="btn btn-primary btn-lg">
+          <i class="bi bi-play-fill me-1"></i>
+          {% if seen_count == 0 %}Start studying{% else %}Continue studying{% endif %}
+        </a>
+        <a href="{% url 'flashcards:match_game' deck.id %}"
+           class="btn btn-gold btn-lg">
+          <i class="bi bi-controller me-1"></i>Match game
+        </a>
+        <a href="{% url 'flashcards:sprint_game' deck.id %}"
+           class="btn btn-gold btn-lg">
+          <i class="bi bi-stopwatch me-1"></i>Sprint
+        </a>
+      {% else %}
+        <button class="btn btn-primary btn-lg" disabled>No cards yet</button>
+      {% endif %}
+      <a href="{% url 'curriculum:lesson_detail' deck.lesson.course.slug deck.lesson.slug %}"
+         class="btn btn-outline-secondary btn-lg">
+        Back to lesson
+      </a>
+    </div>
+
+    {% if cards %}
+      <h2 class="h6 mt-5 mb-3 text-uppercase text-muted">
+        Cards in this deck
+      </h2>
+      <ul class="list-group">
+        {% for c in cards %}
+          <li class="list-group-item d-flex justify-content-between
+                     align-items-center">
+            <span>
+              <span class="text-muted me-2">{{ c.order }}.</span>
+              <span lang="{{ c.front_lang }}">{{ c.front }}</span>
+              <span class="text-muted mx-2">·</span>
+              <span class="small">{{ c.back }}</span>
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

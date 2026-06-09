@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'assessments:quiz_manage' quiz.id %}">{{ quiz.title }}</a>
+    </li>
+    <li class="breadcrumb-item active">{{ page_title }}</li>
+  </ol>
+</nav>
+
+<h1 class="h3 mb-4">{{ page_title }}</h1>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+
+  <div class="row g-4">
+
+    {# ── Sidebar: meta fields ── #}
+    <div class="col-lg-4 order-lg-2">
+      <div class="card sticky-lg-top" style="top:1rem;">
+        <div class="card-header fw-semibold">Question settings</div>
+        <div class="card-body">
+
+          <div class="mb-3">
+            <label for="{{ form.kind.id_for_label }}" class="form-label fw-semibold">
+              Question type <span class="text-danger">*</span>
+            </label>
+            {{ form.kind }}
+          </div>
+
+          <div class="mb-3">
+            <label for="{{ form.order.id_for_label }}" class="form-label fw-semibold">
+              Order <span class="text-danger">*</span>
+            </label>
+            {{ form.order }}
+          </div>
+
+          <div class="mb-3">
+            <label for="{{ form.points.id_for_label }}" class="form-label fw-semibold">Points</label>
+            {{ form.points }}
+          </div>
+
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-check-lg me-1"></i>
+              {% if mode == "edit" %}Save{% else %}Add question{% endif %}
+            </button>
+            <a href="{% url 'assessments:quiz_manage' quiz.id %}"
+               class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    {# ── Main: question text + choices ── #}
+    <div class="col-lg-8 order-lg-1">
+
+      <div class="card mb-4">
+        <div class="card-header fw-semibold">Question</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="{{ form.text.id_for_label }}" class="form-label fw-semibold">
+              Question text <span class="text-danger">*</span>
+            </label>
+            {{ form.text }}
+            {% if form.text.errors %}
+              <div class="invalid-feedback d-block">{{ form.text.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+          <div class="mb-0">
+            <label for="{{ form.explanation.id_for_label }}" class="form-label fw-semibold">
+              {{ form.explanation.label }}
+            </label>
+            {{ form.explanation }}
+          </div>
+        </div>
+      </div>
+
+      {# ── Choices (hidden for short_answer) ── #}
+      <div class="card" id="choices-section">
+        <div class="card-header fw-semibold">
+          Answer choices
+          <span class="text-muted fw-normal small ms-2">
+            — tick <i class="bi bi-check-square"></i> next to the correct answer(s)
+          </span>
+        </div>
+        <div class="card-body">
+
+          {{ formset.management_form }}
+
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th style="width:4rem;">Order</th>
+                  <th>Choice text</th>
+                  <th class="text-center" style="width:5rem;">Correct</th>
+                  <th class="text-center" style="width:4rem;">Delete</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cf in formset %}
+                  <tr {% if cf.instance.pk %}data-existing="1"{% endif %}>
+                    <td>{{ cf.order }}</td>
+                    <td>
+                      {{ cf.text }}
+                      {{ cf.id }}
+                      {% if cf.errors %}
+                        <div class="text-danger small">{{ cf.errors }}</div>
+                      {% endif %}
+                    </td>
+                    <td class="text-center">{{ cf.is_correct }}</td>
+                    <td class="text-center">
+                      {% if cf.fields.DELETE %}
+                        {{ cf.DELETE }}
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-info small mt-3 mb-0" id="tf-hint" style="display:none;">
+            <i class="bi bi-info-circle me-1"></i>
+            For True/False questions, just mark which choice is correct — the
+            "True" and "False" options are created automatically.
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  var kindSelect = document.getElementById("id_q_kind");
+  var choicesSection = document.getElementById("choices-section");
+  var tfHint = document.getElementById("tf-hint");
+
+  function update() {
+    var kind = kindSelect ? kindSelect.value : "";
+    var showChoices = (kind !== "short_answer");
+    if (choicesSection) choicesSection.style.display = showChoices ? "" : "none";
+    if (tfHint) tfHint.style.display = (kind === "true_false") ? "" : "none";
+  }
+
+  if (kindSelect) {
+    kindSelect.addEventListener("change", update);
+    update();
+  }
+})();
+</script>
+{% endblock %}

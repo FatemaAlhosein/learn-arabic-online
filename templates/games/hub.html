@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Games — العاب{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Games</li>
+  </ol>
+</nav>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div style="font-size:2.5rem;line-height:1;">🎮</div>
+  <div>
+    <h1 class="h3 mb-0">Games — الألعاب</h1>
+    <p class="text-muted mb-0 small">Learn Arabic through fun interactive games</p>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Word Builder — LIVE -->
+  <div class="col-md-6 col-lg-4">
+    <a href="{% url 'games:word_builder' %}" class="text-decoration-none">
+      <div class="card h-100 border-0 shadow-sm"
+           style="border-radius:1.25rem;transition:transform .15s,box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.12)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card-body p-4 text-center">
+          <div style="font-size:3.5rem;line-height:1;margin-bottom:.75rem;">🔤</div>
+          <h5 class="fw-bold mb-1">Word Builder</h5>
+          <p class="text-muted small mb-3">بناء الكلمات</p>
+          <p class="small mb-3">Drag letter tiles to spell Arabic words. Discover how letters change shape in different positions!</p>
+          <span class="badge text-bg-success">A1 Level</span>
+          <span class="badge text-bg-primary ms-1">16 Words</span>
+        </div>
+        <div class="card-footer border-0 bg-transparent pb-4 text-center">
+          <span class="btn btn-success btn-sm px-4">Play now →</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Match the Pair — LIVE -->
+  <div class="col-md-6 col-lg-4">
+    <a href="{% url 'games:match_pairs' %}" class="text-decoration-none">
+      <div class="card h-100 border-0 shadow-sm"
+           style="border-radius:1.25rem;transition:transform .15s,box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.12)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card-body p-4 text-center">
+          <div style="font-size:3.5rem;line-height:1;margin-bottom:.75rem;">🃏</div>
+          <h5 class="fw-bold mb-1">Match the Pair</h5>
+          <p class="text-muted small mb-3">مطابقة الكلمات</p>
+          <p class="small mb-3">Flip cards to match Arabic words with their pictures. Tests memory and vocabulary!</p>
+          <span class="badge text-bg-success">A1 Level</span>
+          <span class="badge text-bg-primary ms-1">24 Words</span>
+          <span class="badge text-bg-warning ms-1">3 Difficulty levels</span>
+        </div>
+        <div class="card-footer border-0 bg-transparent pb-4 text-center">
+          <span class="btn btn-success btn-sm px-4">Play now →</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Sentence Builder — LIVE -->
+  <div class="col-md-6 col-lg-4">
+    <a href="{% url 'games:sentence_builder' %}" class="text-decoration-none">
+      <div class="card h-100 border-0 shadow-sm"
+           style="border-radius:1.25rem;transition:transform .15s,box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.12)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card-body p-4 text-center">
+          <div style="font-size:3.5rem;line-height:1;margin-bottom:.75rem;">📝</div>
+          <h5 class="fw-bold mb-1">Sentence Builder</h5>
+          <p class="text-muted small mb-3">بناء الجمل</p>
+          <p class="small mb-3">Drag jumbled Arabic word tiles into the correct sentence order. Builds grammar and comprehension!</p>
+          <span class="badge text-bg-success">A1 Level</span>
+          <span class="badge text-bg-primary ms-1">A2 Level</span>
+          <span class="badge text-bg-warning ms-1">24 Sentences</span>
+        </div>
+        <div class="card-footer border-0 bg-transparent pb-4 text-center">
+          <span class="btn btn-success btn-sm px-4">Play now →</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Missing Letter — LIVE -->
+  <div class="col-md-6 col-lg-4">
+    <a href="{% url 'games:missing_letter' %}" class="text-decoration-none">
+      <div class="card h-100 border-0 shadow-sm"
+           style="border-radius:1.25rem;transition:transform .15s,box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.12)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card-body p-4 text-center">
+          <div style="font-size:3.5rem;line-height:1;margin-bottom:.75rem;">❓</div>
+          <h5 class="fw-bold mb-1">Missing Letter</h5>
+          <p class="text-muted small mb-3">الحرف الناقص</p>
+          <p class="small mb-3">A word is missing one letter — pick the right one from three choices. Tap to answer!</p>
+          <span class="badge text-bg-success">A1 Level</span>
+          <span class="badge text-bg-primary ms-1">20 Words</span>
+        </div>
+        <div class="card-footer border-0 bg-transparent pb-4 text-center">
+          <span class="btn btn-success btn-sm px-4">Play now →</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- True or False — LIVE -->
+  <div class="col-md-6 col-lg-4">
+    <a href="{% url 'games:true_or_false' %}" class="text-decoration-none">
+      <div class="card h-100 border-0 shadow-sm"
+           style="border-radius:1.25rem;transition:transform .15s,box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.12)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card-body p-4 text-center">
+          <div style="font-size:3.5rem;line-height:1;margin-bottom:.75rem;">✅</div>
+          <h5 class="fw-bold mb-1">True or False</h5>
+          <p class="text-muted small mb-3">صح أم خطأ</p>
+          <p class="small mb-3">See a picture and an Arabic sentence — is it true or false? Fast and fun!</p>
+          <span class="badge text-bg-success">A1 Level</span>
+          <span class="badge text-bg-primary ms-1">20 Questions</span>
+        </div>
+        <div class="card-footer border-0 bg-transparent pb-4 text-center">
+          <span class="btn btn-success btn-sm px-4">Play now →</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <!-- Word Hunt — LIVE -->
+  <div class="col-md-6 col-lg-4">
+    <a href="{% url 'games:word_hunt' %}" class="text-decoration-none">
+      <div class="card h-100 border-0 shadow-sm"
+           style="border-radius:1.25rem;transition:transform .15s,box-shadow .15s;"
+           onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 32px rgba(0,0,0,.12)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="card-body p-4 text-center">
+          <div style="font-size:3.5rem;line-height:1;margin-bottom:.75rem;">🔍</div>
+          <h5 class="fw-bold mb-1">Word Hunt</h5>
+          <p class="text-muted small mb-3">البحث عن الكلمات</p>
+          <p class="small mb-3">Find 8 hidden Arabic words in a 10×10 grid — drag to select. New grid every game!</p>
+          <span class="badge text-bg-info">A2 Level</span>
+          <span class="badge text-bg-primary ms-1">8 Words</span>
+          <span class="badge text-bg-warning ms-1">Timed</span>
+        </div>
+        <div class="card-footer border-0 bg-transparent pb-4 text-center">
+          <span class="btn btn-success btn-sm px-4">Play now →</span>
+        </div>
+      </div>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

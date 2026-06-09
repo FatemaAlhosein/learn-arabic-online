@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Submissions — {{ assignment.title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">{{ assignment.title }}</li>
+  </ol>
+</nav>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+{# ── Header ── #}
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+  <div class="d-flex align-items-start gap-3">
+    <div style="font-size:2.5rem;line-height:1;">📋</div>
+    <div>
+      <h1 class="h3 mb-1">{{ assignment.title }}</h1>
+      {% if assignment.description %}
+        <p class="text-muted mb-0 small">{{ assignment.description }}</p>
+      {% endif %}
+      <div class="mt-2 d-flex flex-wrap gap-2 small">
+        {% if assignment.due_date %}
+          <span class="badge text-bg-light border">
+            <i class="bi bi-calendar-event me-1"></i>Due {{ assignment.due_date|date:"j N Y, g:i a" }}
+          </span>
+        {% endif %}
+        <span class="badge text-bg-light border">
+          <i class="bi bi-award me-1"></i>Max {{ assignment.max_score }} pts
+        </span>
+        {% if assignment.is_published %}
+          <span class="badge text-bg-success">Published</span>
+        {% else %}
+          <span class="badge text-bg-secondary">Draft</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'assignments:assignment_edit' assignment.id %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit assignment
+    </a>
+    <form method="post" action="{% url 'assignments:assignment_delete' assignment.id %}"
+          onsubmit="return confirm('Delete this assignment? This cannot be undone.')">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-outline-danger btn-sm">
+        <i class="bi bi-trash me-1"></i>Delete
+      </button>
+    </form>
+  </div>
+</div>
+
+{# ── Stats row ── #}
+<div class="row g-3 mb-4">
+
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-primary" id="stat-total">{{ submissions|length }}</div>
+      <div class="small text-muted">Total submissions</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-warning">{{ pending_count }}</div>
+      <div class="small text-muted">Awaiting grade</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-success" id="stat-graded">—</div>
+      <div class="small text-muted">Graded</div>
+    </div>
+  </div>
+
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center py-3">
+      <div class="fs-3 fw-bold text-info">{{ assignment.max_score }}</div>
+      <div class="small text-muted">Max score</div>
+    </div>
+  </div>
+
+</div>
+
+{# ── Submissions table ── #}
+{% if submissions %}
+  <div class="card border-0 shadow-sm">
+    <div class="card-header fw-semibold d-flex align-items-center justify-content-between">
+      <span><i class="bi bi-people me-1"></i>Submissions</span>
+      {% if pending_count > 0 %}
+        <span class="badge text-bg-warning">{{ pending_count }} to grade</span>
+      {% endif %}
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">Student</th>
+            <th>Submitted</th>
+            <th>Status</th>
+            <th>Score</th>
+            <th class="text-end pe-3">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sub in submissions %}
+            <tr>
+              <td class="ps-3">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold"
+                       style="width:2rem;height:2rem;font-size:.8rem;flex-shrink:0;">
+                    {{ sub.student.user.first_name|first|default:sub.student.user.email|first|upper }}
+                  </div>
+                  <div>
+                    <div class="fw-semibold small">
+                      {{ sub.student.user.get_full_name|default:sub.student.user.email }}
+                    </div>
+                    <div class="text-muted" style="font-size:.75rem;">{{ sub.student.user.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="small text-muted">
+                {% if sub.submitted_at %}
+                  {{ sub.submitted_at|date:"j N, g:i a" }}
+                {% else %}
+                  <span class="text-secondary">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if sub.status == 'graded' %}
+                  <span class="badge text-bg-success">Graded</span>
+                {% elif sub.status == 'submitted' %}
+                  <span class="badge text-bg-warning text-dark">Needs grading</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">Not submitted</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if sub.score is not None %}
+                  <span class="fw-semibold">{{ sub.score }}</span>
+                  <span class="text-muted small">/ {{ assignment.max_score }}</span>
+                  <span class="text-muted small ms-1">({{ sub.score_percent }}%)</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td class="text-end pe-3">
+                {% if sub.status == 'submitted' %}
+                  <a href="{% url 'assignments:grade_submission' assignment.id sub.id %}"
+                     class="btn btn-sm btn-primary">
+                    <i class="bi bi-pencil-square me-1"></i>Grade
+                  </a>
+                {% elif sub.status == 'graded' %}
+                  <a href="{% url 'assignments:grade_submission' assignment.id sub.id %}"
+                     class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-eye me-1"></i>Review
+                  </a>
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+{% else %}
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center py-5">
+      <div style="font-size:3rem;">📭</div>
+      <p class="text-muted mt-2 mb-0">No submissions yet.</p>
+      {% if not assignment.is_published %}
+        <p class="text-muted small mt-1">
+          This assignment is a <strong>draft</strong> — publish it so students can see and submit.
+        </p>
+        <a href="{% url 'assignments:assignment_edit' assignment.id %}" class="btn btn-outline-primary btn-sm mt-2">
+          Publish assignment
+        </a>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const gradedBadges = document.querySelectorAll('td .badge.text-bg-success');
+  const el = document.getElementById('stat-graded');
+  if (el) el.textContent = gradedBadges.length;
+});
+</script>
+{% endblock %}

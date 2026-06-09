@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Game Vocabulary — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Game Vocabulary</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1"><i class="bi bi-collection me-2"></i>Game Vocabulary</h1>
+    <p class="text-muted mb-0 small">Words used across Word Builder, Match Pairs, Missing Letter and Word Hunt.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'games:question_list' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-chat-quote me-1"></i>Game Questions
+    </a>
+    <a href="{% url 'games:vocab_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add word
+    </a>
+  </div>
+</div>
+
+{# ── Filters ── #}
+<form method="get" class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-sm-4">
+        <label class="form-label">Level</label>
+        <select name="level" class="form-select form-select-sm">
+          <option value="">All levels</option>
+          {% for l in levels %}
+            <option value="{{ l.code }}" {% if level_filter == l.code %}selected{% endif %}>
+              {{ l.code }} — {{ l.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label">Status</label>
+        <select name="active" class="form-select form-select-sm">
+          <option value="">All</option>
+          <option value="1" {% if active_filter == "1" %}selected{% endif %}>Active only</option>
+          <option value="0" {% if active_filter == "0" %}selected{% endif %}>Inactive only</option>
+        </select>
+      </div>
+      <div class="col-sm-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        <a href="{% url 'games:vocab_list' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+{# ── Table ── #}
+{% if words %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Arabic</th>
+          <th>English</th>
+          <th class="text-center">Emoji</th>
+          <th>Level</th>
+          <th>Course</th>
+          <th class="text-center">Tiles</th>
+          <th class="text-center">Missing</th>
+          <th class="text-center">Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for w in words %}
+          <tr>
+            <td>
+              <span class="fw-semibold fs-5" style="font-family:'Cairo',serif;direction:rtl;">
+                {{ w.arabic }}
+              </span>
+            </td>
+            <td>{{ w.english }}</td>
+            <td class="text-center fs-5">{{ w.emoji }}</td>
+            <td>
+              {% if w.level %}
+                <span class="badge text-bg-primary">{{ w.level.code }}</span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td class="small text-muted">{{ w.course.title|default:"—"|truncatechars:22 }}</td>
+            <td class="text-center">
+              {% if w.letters %}
+                <span class="badge text-bg-success"><i class="bi bi-check-lg"></i></span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if w.missing_index is not None %}
+                <span class="badge text-bg-success"><i class="bi bi-check-lg"></i></span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if w.is_active %}
+                <span class="badge text-bg-success">Active</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Off</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="d-flex gap-1 justify-content-end">
+                <a href="{% url 'games:vocab_edit' w.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="post" action="{% url 'games:vocab_delete' w.id %}"
+                      onsubmit="return confirm('Delete «{{ w.arabic }}»?')">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-muted small mt-2">{{ words|length }} word{{ words|length|pluralize }} shown</p>
+{% else %}
+  <div class="bh-empty">
+    <i class="bi bi-collection bh-empty-icon"></i>
+    <h5>No vocabulary words yet</h5>
+    <p class="text-muted small mb-3">Add your first word and it will appear in the games automatically.</p>
+    <a href="{% url 'games:vocab_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add word
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

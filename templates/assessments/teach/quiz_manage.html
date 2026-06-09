@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz: {{ quiz.title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    {% if quiz.lesson %}
+      <li class="breadcrumb-item">
+        <a href="{% url 'curriculum:course_manage' quiz.lesson.course.slug %}">
+          {{ quiz.lesson.course.title }}
+        </a>
+      </li>
+    {% elif quiz.course %}
+      <li class="breadcrumb-item">
+        <a href="{% url 'curriculum:course_manage' quiz.course.slug %}">
+          {{ quiz.course.title }}
+        </a>
+      </li>
+    {% endif %}
+    <li class="breadcrumb-item active">Quiz: {{ quiz.title }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
+  <div>
+    <h1 class="h3 mb-1">{{ quiz.title }}</h1>
+    <p class="text-muted small mb-0">
+      <span class="badge text-bg-light border me-1">{{ quiz.get_kind_display }}</span>
+      Pass at {{ quiz.pass_threshold }}%
+      {% if quiz.time_limit_minutes %}
+        · {{ quiz.time_limit_minutes }} min limit
+      {% endif %}
+      {% if quiz.is_published %}
+        · <span class="badge text-bg-success">Published</span>
+      {% else %}
+        · <span class="badge text-bg-secondary">Draft</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'assessments:quiz_edit' quiz.id %}"
+       class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-pencil me-1"></i>Edit settings
+    </a>
+    <a href="{% url 'assessments:question_create' quiz.id %}"
+       class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add question
+    </a>
+  </div>
+</div>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">
+      Questions
+      <span class="badge text-bg-light border ms-1">{{ questions|length }}</span>
+    </span>
+    {% if questions %}
+      <span class="small text-muted">
+        {{ questions|length }} question{{ questions|length|pluralize }}
+        · {{ quiz.pass_threshold }}% to pass
+      </span>
+    {% endif %}
+  </div>
+
+  {% if questions %}
+    <div class="list-group list-group-flush">
+      {% for q in questions %}
+        <div class="list-group-item py-3">
+          <div class="d-flex justify-content-between align-items-start gap-3">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="badge text-bg-secondary rounded-pill">{{ q.order }}</span>
+                <span class="badge text-bg-light border small">{{ q.get_kind_display }}</span>
+                {% if q.points != 1 %}
+                  <span class="small text-muted">{{ q.points }} pts</span>
+                {% endif %}
+              </div>
+              <div class="fw-semibold">{{ q.text|truncatechars:120 }}</div>
+
+              {# Show choices summary #}
+              {% if q.choices.all %}
+                <div class="mt-2 d-flex flex-wrap gap-1">
+                  {% for choice in q.choices.all %}
+                    <span class="badge {% if choice.is_correct %}text-bg-success{% else %}text-bg-light border{% endif %}">
+                      {% if choice.is_correct %}<i class="bi bi-check me-1"></i>{% endif %}
+                      {{ choice.text|truncatechars:30 }}
+                    </span>
+                  {% endfor %}
+                </div>
+              {% elif q.kind == "short_answer" %}
+                <div class="small text-muted mt-1">
+                  <i class="bi bi-pencil-square me-1"></i>Short answer (manually graded)
+                </div>
+              {% else %}
+                <div class="small text-warning mt-1">
+                  <i class="bi bi-exclamation-triangle me-1"></i>No choices yet — add them by editing this question.
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="d-flex gap-2 flex-shrink-0">
+              <a href="{% url 'assessments:question_edit' quiz.id q.id %}"
+                 class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <form method="post"
+                    action="{% url 'assessments:question_delete' quiz.id q.id %}"
+                    onsubmit="return confirm('Delete this question?');"
+                    class="m-0">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card-body text-center py-5">
+      <i class="bi bi-patch-question display-5 text-muted"></i>
+      <p class="lead mt-3 mb-3">No questions yet.</p>
+      <a href="{% url 'assessments:question_create' quiz.id %}"
+         class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i>Add your first question
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-3">
+  {% if quiz.lesson %}
+    <a href="{% url 'curriculum:course_manage' quiz.lesson.course.slug %}"
+       class="btn btn-link btn-sm text-muted">
+      <i class="bi bi-arrow-left me-1"></i>Back to course
+    </a>
+  {% elif quiz.course %}
+    <a href="{% url 'curriculum:course_manage' quiz.course.slug %}"
+       class="btn btn-link btn-sm text-muted">
+      <i class="bi bi-arrow-left me-1"></i>Back to course
+    </a>
+  {% else %}
+    <a href="{% url 'dashboard' %}" class="btn btn-link btn-sm text-muted">
+      <i class="bi bi-arrow-left me-1"></i>Dashboard
+    </a>
+  {% endif %}
+
+  <form method="post"
+        action="{% url 'assessments:quiz_delete' quiz.id %}"
+        onsubmit="return confirm('Delete quiz &quot;{{ quiz.title }}&quot; and ALL its questions? This cannot be undone.');"
+        class="m-0">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger btn-sm">
+      <i class="bi bi-trash me-1"></i>Delete this quiz
+    </button>
+  </form>
+</div>
+
+{% endblock %}

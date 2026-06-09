@@ -1,0 +1,55 @@
+# =========================================================
+# Bayt al-Hikma · .gitignore
+# =========================================================
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+
+# --- Virtualenvs ---
+venv/
+env/
+.venv/
+ENV/
+
+# --- Django ---
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+sent_emails/
+staticfiles/
+*.pot
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- IDE / editors ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS clutter ---
+.DS_Store
+Thumbs.db
+
+# --- Coverage / testing ---
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.tox/
+
+# --- Build / dist ---
+build/
+dist/

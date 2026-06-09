@@ -1,0 +1,761 @@
+{% extends "base.html" %}
+{% block title %}Word Builder — بناء الكلمات{% endblock %}
+
+{% block content %}
+<style>
+/* ── Layout ──────────────────────────────────────────── */
+:root {
+  --g-green:  #1a5c3a;
+  --g-gold:   #c89b3c;
+  --g-blue:   #1a4d8c;
+  --g-red:    #c0392b;
+  --g-purple: #8b2fc9;
+  --g-bg:     #f0ebe0;
+  --g-paper:  #fffdf7;
+  --g-border: #e0d8c8;
+}
+.game-wrap {
+  max-width: 780px; margin: 0 auto;
+  font-family: system-ui, sans-serif;
+}
+
+/* ── Header bar ─────────────────────────────────────── */
+.game-hdr {
+  background: var(--g-green); border-radius: 1.25rem;
+  padding: 1.25rem 1.75rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 1rem;
+  color: #fff; direction: ltr;
+}
+.game-hdr-icon { font-size: 2rem; line-height: 1; }
+.game-hdr h1  { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.game-hdr p   { font-size: .85rem; color: rgba(255,255,255,.75); margin: .15rem 0 0; }
+.score-pill {
+  margin-left: auto; background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 2rem; padding: .35rem 1rem;
+  font-weight: 700; font-size: .9rem;
+  white-space: nowrap;
+}
+
+/* ── Progress bar ───────────────────────────────────── */
+.prog-track {
+  height: 8px; background: var(--g-border);
+  border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden;
+}
+.prog-fill {
+  height: 100%; background: var(--g-green);
+  border-radius: 4px; transition: width .4s ease;
+}
+
+/* ── Card — compact clue box only ───────────────────── */
+.game-card {
+  background: var(--g-paper); border: 1px solid var(--g-border);
+  border-radius: 1.25rem; padding: 1.5rem 1.75rem;
+  box-shadow: 0 4px 24px rgba(26,92,58,.08);
+  text-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 1rem;
+  margin-bottom: .75rem;
+}
+
+/* ── Bank tray ───────────────────────────────────────── */
+.bank-tray {
+  background: var(--g-paper); border: 1px solid var(--g-border);
+  border-radius: 1rem; padding: 1.25rem 1.5rem;
+  max-width: 760px; margin: 0 auto .75rem; text-align: center;
+}
+.bank-label {
+  font-size: .7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .12em; color: var(--g-green); margin-bottom: .75rem;
+  direction: ltr;
+}
+
+/* form-type legend */
+.form-legend {
+  display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center;
+  margin-bottom: .85rem; direction: ltr;
+}
+.legend-chip {
+  font-size: .6rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; padding: .2rem .55rem; border-radius: 2rem;
+  border: 1.5px solid; opacity: .75;
+}
+
+/* emoji + meaning */
+.word-emoji { font-size: 4rem; line-height: 1; }
+.word-meaning {
+  font-size: 1.1rem; color: #444;
+  background: #f5f0e8; border-radius: .5rem;
+  padding: .3rem .9rem; font-weight: 600;
+}
+
+/* hint: full Arabic word shown faded */
+.word-hint {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 2.2rem; color: rgba(26,92,58,.18);
+  letter-spacing: .05em; direction: rtl;
+  cursor: pointer; user-select: none;
+  transition: color .2s;
+  position: relative;
+}
+.word-hint::after {
+  content: '👁 Hint'; font-size: .65rem; font-family: system-ui, sans-serif;
+  color: #aaa; position: absolute; bottom: -1.1rem; left: 50%; transform: translateX(-50%);
+  white-space: nowrap;
+}
+.word-hint.revealed { color: rgba(26,92,58,.55); }
+
+/* ── Drop zone ──────────────────────────────────────── */
+.drop-zone {
+  display: flex; gap: .6rem; flex-wrap: wrap;
+  justify-content: center; direction: rtl;
+  min-height: 72px; padding: .75rem 1rem;
+  border: 2.5px dashed var(--g-border); border-radius: .85rem;
+  background: #faf7f0; width: 100%; max-width: 520px;
+  transition: border-color .2s, background .2s;
+}
+.drop-zone.drag-over {
+  border-color: var(--g-gold); background: #fdf8e8;
+}
+
+/* slot inside drop-zone */
+.letter-slot {
+  width: 64px; height: 64px;
+  border: 2px dashed #ccc; border-radius: .6rem;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 1.8rem; color: var(--g-green); font-weight: 700;
+  background: #fff; transition: all .15s;
+  cursor: default;
+}
+.letter-slot.filled { border-color: var(--g-green); background: #e8f5ee; }
+.letter-slot.correct { border-color: #27ae60; background: #d4efdf; animation: popIn .3s; }
+.letter-slot.wrong   { border-color: var(--g-red);  background: #fdecea; animation: shake .3s; }
+
+/* ── Context-form letter bank ──────────────────────── */
+.letter-bank {
+  display: flex; gap: .6rem; flex-wrap: wrap;
+  justify-content: center; direction: ltr;
+  min-height: 88px; width: 100%;
+}
+
+/* Each tile: shows form glyph + form-type label */
+.letter-tile {
+  width: 70px; height: 80px;
+  border-radius: .7rem;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: .15rem;
+  background: white; border: 2.5px solid var(--g-border);
+  box-shadow: 0 3px 8px rgba(0,0,0,.1);
+  cursor: grab; user-select: none;
+  transition: transform .1s, box-shadow .1s, opacity .2s;
+}
+.letter-tile:hover  { transform: translateY(-3px) scale(1.07); box-shadow: 0 7px 18px rgba(0,0,0,.15); }
+.letter-tile:active { cursor: grabbing; transform: scale(.96); }
+.letter-tile.dragging { opacity: .3; transform: scale(.9); }
+.letter-tile.used { opacity: 0; pointer-events: none; }
+
+.tile-glyph {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 2rem; line-height: 1.2; font-weight: 700;
+}
+.tile-label {
+  font-size: .52rem; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .06em;
+  font-family: system-ui, sans-serif; opacity: .8;
+}
+
+/* colour per form type */
+.tile-start  { border-color: #1a5c3a; }
+.tile-start  .tile-glyph, .tile-start  .tile-label { color: #1a5c3a; }
+.tile-middle { border-color: #1a4d8c; }
+.tile-middle .tile-glyph, .tile-middle .tile-label { color: #1a4d8c; }
+.tile-end    { border-color: #c0392b; }
+.tile-end    .tile-glyph, .tile-end    .tile-label { color: #c0392b; }
+.tile-alone  { border-color: #8b2fc9; }
+.tile-alone  .tile-glyph, .tile-alone  .tile-label { color: #8b2fc9; }
+
+/* ── Feedback banner ────────────────────────────────── */
+.feedback {
+  max-width: 760px; margin: 0 auto .75rem;
+  border-radius: .75rem;
+  padding: .85rem 1.25rem; font-weight: 700; font-size: 1rem;
+  text-align: center; display: none; direction: ltr;
+}
+.feedback.correct-fb { background: #d4efdf; color: #1e8449; display: block; }
+.feedback.wrong-fb   { background: #fdecea; color: #a93226; display: block; }
+
+/* ── Letter shapes reference panel ─────────────────── */
+.shapes-panel {
+  background: #f0f4ff; border: 1px solid #c5d3f0;
+  border-radius: .75rem; padding: 1rem 1.25rem;
+  max-width: 760px; margin: 0 auto .75rem;
+  direction: ltr; text-align: left;
+}
+.shapes-panel-title {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--g-blue);
+  cursor: pointer; display: flex; align-items: center; gap: .4rem;
+  list-style: none;
+}
+.shapes-panel-title::-webkit-details-marker { display: none; }
+.shapes-row {
+  display: flex; gap: .5rem; flex-wrap: wrap; direction: rtl;
+}
+.shape-cell {
+  display: flex; flex-direction: column; align-items: center;
+  gap: .15rem; min-width: 52px;
+}
+.shape-ar {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 1.6rem; color: var(--g-blue); line-height: 1.3;
+}
+.shape-lbl {
+  font-size: .6rem; color: #888; font-family: system-ui, sans-serif;
+  text-transform: uppercase; letter-spacing: .04em;
+}
+
+/* ── Celebration overlay ────────────────────────────── */
+.celebrate {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.45); z-index: 9999;
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.celebrate.show { display: flex; }
+.celebrate-box {
+  background: #fff; border-radius: 1.5rem;
+  padding: 2.5rem 3rem; text-align: center;
+  box-shadow: 0 2rem 5rem rgba(0,0,0,.3);
+  animation: popIn .4s;
+}
+.celebrate-emoji { font-size: 4rem; }
+.celebrate-title { font-size: 1.6rem; font-weight: 800; color: var(--g-green); margin: .5rem 0; }
+.celebrate-sub   { color: #666; margin-bottom: 1.5rem; }
+.btn-next {
+  background: var(--g-green); color: #f5d98b;
+  border: none; border-radius: .75rem;
+  padding: .85rem 2.5rem; font-size: 1.05rem; font-weight: 700;
+  cursor: pointer; font-family: system-ui, sans-serif;
+}
+
+/* ── Animations ─────────────────────────────────────── */
+@keyframes popIn {
+  0%   { transform: scale(.7); opacity: 0; }
+  70%  { transform: scale(1.05); }
+  100% { transform: scale(1);  opacity: 1; }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-6px); }
+  40%     { transform: translateX(6px); }
+  60%     { transform: translateX(-4px); }
+  80%     { transform: translateX(4px); }
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:hub' %}">Games</a></li>
+    <li class="breadcrumb-item active">Word Builder</li>
+  </ol>
+</nav>
+
+<div class="game-wrap">
+
+  <!-- Header -->
+  <div class="game-hdr">
+    <div class="game-hdr-icon">🔤</div>
+    <div>
+      <h1>Word Builder — بناء الكلمات</h1>
+      <p>Choose the correct letter shape for each position</p>
+    </div>
+    <div class="score-pill" id="scorePill">⭐ 0 / 0</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="prog-track">
+    <div class="prog-fill" id="progFill" style="width:0%"></div>
+  </div>
+
+  <!-- ① WORD CARD -->
+  <div class="game-card" id="gameCard">
+    <div style="display:flex;align-items:center;gap:1rem;direction:ltr;">
+      <div class="word-emoji" id="wordEmoji">🌟</div>
+      <div>
+        <div class="word-meaning" id="wordMeaning">Loading…</div>
+        <div class="word-hint" id="wordHint" onclick="revealHint()" title="Click to reveal hint"></div>
+      </div>
+    </div>
+
+    <p style="font-size:.78rem;color:#aaa;margin:0;direction:ltr;">
+      ↓ Pick tiles below — choose the <strong>right shape</strong> for each position
+    </p>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone"
+         ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+    </div>
+  </div>
+
+  <!-- ② LETTER BANK (above buttons) -->
+  <div class="bank-tray">
+    <div class="bank-label">Choose the correct shape — اختر شكل الحرف الصحيح</div>
+
+    <!-- Colour legend -->
+    <div class="form-legend">
+      <span class="legend-chip" style="color:#1a5c3a;border-color:#1a5c3a;">🟢 Start — أول</span>
+      <span class="legend-chip" style="color:#1a4d8c;border-color:#1a4d8c;">🔵 Middle — وسط</span>
+      <span class="legend-chip" style="color:#c0392b;border-color:#c0392b;">🔴 End — آخر</span>
+      <span class="legend-chip" style="color:#8b2fc9;border-color:#8b2fc9;">🟣 Alone — منفرد</span>
+    </div>
+
+    <div class="letter-bank" id="letterBank"></div>
+  </div>
+
+  <!-- ③ BUTTONS (below bank) -->
+  <div style="display:flex;flex-direction:row;align-items:stretch;gap:10px;margin:0 auto 12px;max-width:760px;width:100%;box-sizing:border-box;">
+    <button onclick="clearSlots()"
+      style="flex-shrink:0;padding:14px 24px;font-size:15px;font-weight:600;
+             background:#fff;color:#555;border:1px solid #ccc;border-radius:10px;
+             cursor:pointer;font-family:system-ui,sans-serif;">
+      ↺ Clear
+    </button>
+    <button id="btnCheck" onclick="checkAnswer()" disabled
+      style="flex:1;padding:14px 0;font-size:16px;font-weight:800;
+             background:#fff;color:#999;border:3px dashed #1a5c3a;border-radius:10px;
+             cursor:not-allowed;font-family:system-ui,sans-serif;letter-spacing:.02em;">
+      ✓ Check
+    </button>
+  </div>
+
+  <!-- ④ FEEDBACK -->
+  <div class="feedback" id="feedback"></div>
+
+  <!-- ⑤ SHAPES PANEL — collapsible -->
+  <details class="shapes-panel" id="shapesPanel">
+    <summary class="shapes-panel-title">
+      🔍 Letter shapes in this word
+      <span style="margin-left:auto;font-size:.72rem;color:#aaa;font-weight:400;">tap to expand</span>
+    </summary>
+    <div class="shapes-row" id="shapesRow" style="margin-top:.75rem;"></div>
+  </details>
+
+</div><!-- /game-wrap -->
+
+<!-- Celebration overlay -->
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-box">
+    <div class="celebrate-emoji" id="celebEmoji">🎉</div>
+    <div class="celebrate-title" id="celebTitle">Well done!</div>
+    <div class="celebrate-sub"   id="celebSub"></div>
+    <button class="btn-next" onclick="nextWord()">Next word →</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  TATWEEL helper
+// ═══════════════════════════════════════════════════════════
+const TW = 'ـ';  // ـ  tatweel character
+
+// Determine form type from a form string
+function formType(s) {
+  const pre  = s.startsWith(TW);
+  const post = s.endsWith(TW);
+  if (!pre && post)  return 'start';
+  if (pre  && post)  return 'middle';
+  if (pre  && !post) return 'end';
+  return 'alone';
+}
+function formLabel(s) {
+  const t = formType(s);
+  return { start:'Start', middle:'Middle', end:'End', alone:'Alone' }[t];
+}
+function formClass(s) {
+  return 'tile-' + formType(s);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  WORD DATA — loaded from the database via Django
+// ═══════════════════════════════════════════════════════════
+
+// Static Arabic letter forms lookup (linguistic constant — never changes)
+const ARABIC_FORMS = {
+  'ا':{ iso:'ا', ini:'ا',  med:'ـا',  fin:'ـا',  label:'ألف' },
+  'أ':{ iso:'أ', ini:'أ',  med:'ـأ',  fin:'ـأ',  label:'ألف' },
+  'إ':{ iso:'إ', ini:'إ',  med:'ـإ',  fin:'ـإ',  label:'ألف' },
+  'ء':{ iso:'ء', ini:'ء',  med:'ء',   fin:'ء',   label:'همزة' },
+  'ب':{ iso:'ب', ini:'بـ', med:'ـبـ', fin:'ـب',  label:'باء' },
+  'ت':{ iso:'ت', ini:'تـ', med:'ـتـ', fin:'ـت',  label:'تاء' },
+  'ث':{ iso:'ث', ini:'ثـ', med:'ـثـ', fin:'ـث',  label:'ثاء' },
+  'ج':{ iso:'ج', ini:'جـ', med:'ـجـ', fin:'ـج',  label:'جيم' },
+  'ح':{ iso:'ح', ini:'حـ', med:'ـحـ', fin:'ـح',  label:'حاء' },
+  'خ':{ iso:'خ', ini:'خـ', med:'ـخـ', fin:'ـخ',  label:'خاء' },
+  'د':{ iso:'د', ini:'د',  med:'ـد',  fin:'ـد',  label:'دال' },
+  'ذ':{ iso:'ذ', ini:'ذ',  med:'ـذ',  fin:'ـذ',  label:'ذال' },
+  'ر':{ iso:'ر', ini:'ر',  med:'ـر',  fin:'ـر',  label:'راء' },
+  'ز':{ iso:'ز', ini:'ز',  med:'ـز',  fin:'ـز',  label:'زاي' },
+  'س':{ iso:'س', ini:'سـ', med:'ـسـ', fin:'ـس',  label:'سين' },
+  'ش':{ iso:'ش', ini:'شـ', med:'ـشـ', fin:'ـش',  label:'شين' },
+  'ص':{ iso:'ص', ini:'صـ', med:'ـصـ', fin:'ـص',  label:'صاد' },
+  'ض':{ iso:'ض', ini:'ضـ', med:'ـضـ', fin:'ـض',  label:'ضاد' },
+  'ط':{ iso:'ط', ini:'طـ', med:'ـطـ', fin:'ـط',  label:'طاء' },
+  'ظ':{ iso:'ظ', ini:'ظـ', med:'ـظـ', fin:'ـظ',  label:'ظاء' },
+  'ع':{ iso:'ع', ini:'عـ', med:'ـعـ', fin:'ـع',  label:'عين' },
+  'غ':{ iso:'غ', ini:'غـ', med:'ـغـ', fin:'ـغ',  label:'غين' },
+  'ف':{ iso:'ف', ini:'فـ', med:'ـفـ', fin:'ـف',  label:'فاء' },
+  'ق':{ iso:'ق', ini:'قـ', med:'ـقـ', fin:'ـق',  label:'قاف' },
+  'ك':{ iso:'ك', ini:'كـ', med:'ـكـ', fin:'ـك',  label:'كاف' },
+  'ل':{ iso:'ل', ini:'لـ', med:'ـلـ', fin:'ـل',  label:'لام' },
+  'م':{ iso:'م', ini:'مـ', med:'ـمـ', fin:'ـم',  label:'ميم' },
+  'ن':{ iso:'ن', ini:'نـ', med:'ـنـ', fin:'ـن',  label:'نون' },
+  'ه':{ iso:'ه', ini:'هـ', med:'ـهـ', fin:'ـه',  label:'هاء' },
+  'ة':{ iso:'ة', ini:'ة',  med:'ـة',  fin:'ـة',  label:'تاء مربوطة' },
+  'و':{ iso:'و', ini:'و',  med:'ـو',  fin:'ـو',  label:'واو' },
+  'ي':{ iso:'ي', ini:'يـ', med:'ـيـ', fin:'ـي',  label:'ياء' },
+  'ى':{ iso:'ى', ini:'ى',  med:'ـى',  fin:'ـى',  label:'ألف مقصورة' },
+  'ئ':{ iso:'ئ', ini:'ئـ', med:'ـئـ', fin:'ـئ',  label:'ياء' },
+  'ؤ':{ iso:'ؤ', ini:'ؤ',  med:'ـؤ',  fin:'ـؤ',  label:'واو' },
+};
+
+// Build forms dict from static lookup for each word
+function buildForms(letters) {
+  const forms = {};
+  letters.forEach(l => { if (ARABIC_FORMS[l]) forms[l] = ARABIC_FORMS[l]; });
+  return forms;
+}
+
+// Words from database — filtered by student level in the view
+const WORDS_RAW = {{ words_json|safe }};
+const WORDS = WORDS_RAW.map(w => ({ ...w, forms: buildForms(w.letters) }));
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+let queue    = [];
+let qi       = 0;
+let score    = 0;
+let attempts = 0;
+let currentWord   = null;
+let currentSlots  = [];   // stores form strings (with tatweel) per slot
+let draggedTileIdx = null;
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+  if (!WORDS.length) {
+    document.getElementById('game-area').innerHTML =
+      '<div class="alert alert-info text-center mt-5"><i class="bi bi-info-circle me-2"></i>No vocabulary words with letter tiles yet — ask your teacher to add some!</div>';
+    return;
+  }
+  queue = shuffle([...Array(WORDS.length).keys()]);
+  qi = 0; score = 0; attempts = 0;
+  updateScore();
+  loadWord();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOAD WORD
+// ═══════════════════════════════════════════════════════════
+function loadWord() {
+  if (qi >= queue.length) {
+    queue = shuffle([...Array(WORDS.length).keys()]);
+    qi = 0;
+  }
+  currentWord  = WORDS[queue[qi]];
+  currentSlots = Array(currentWord.letters.length).fill('');
+  draggedTileIdx = null;
+
+  document.getElementById('wordEmoji').textContent   = currentWord.emoji;
+  document.getElementById('wordMeaning').textContent = currentWord.en;
+  document.getElementById('wordHint').textContent    = currentWord.ar;
+  document.getElementById('wordHint').classList.remove('revealed');
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').textContent = '';
+
+  const btn = document.getElementById('btnCheck');
+  btn.disabled = true;
+  btn.style.background = '#fff'; btn.style.color = '#999';
+  btn.style.border = '3px dashed #1a5c3a'; btn.style.cursor = 'not-allowed';
+
+  const sp = document.getElementById('shapesPanel');
+  if (sp) sp.removeAttribute('open');
+
+  renderDropZone();
+  renderBank();
+  renderShapes();
+  updateProgress();
+}
+
+// ─── Drop zone ─────────────────────────────────────────────
+function renderDropZone() {
+  const dz = document.getElementById('dropZone');
+  dz.innerHTML = '';
+  currentSlots.forEach((form, i) => {
+    const slot = document.createElement('div');
+    slot.className = 'letter-slot' + (form ? ' filled' : '');
+    slot.dataset.idx = i;
+    slot.textContent = form;
+
+    slot.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+    slot.addEventListener('dragleave', () => { dz.classList.remove('drag-over'); });
+    slot.addEventListener('drop',      e => { e.preventDefault(); dropIntoSlot(i); });
+    slot.addEventListener('click',     () => removeFromSlot(i));
+    dz.appendChild(slot);
+  });
+}
+
+// ─── Letter bank — contextual form tiles ──────────────────
+function renderBank() {
+  const bank = document.getElementById('letterBank');
+  bank.innerHTML = '';
+
+  const word = currentWord;
+  const tiles = [];
+
+  word.contextForms.forEach((correctForm, posIdx) => {
+    const letter = word.letters[posIdx];
+    const f = word.forms[letter];
+
+    // Correct tile for this position
+    tiles.push({ form: correctForm, letter });
+
+    // 1–2 distractors: wrong form(s) of the same letter
+    if (f) {
+      const allForms = [f.iso, f.ini, f.med, f.fin]
+        .filter(v => v && v !== '—' && v !== correctForm);
+      // Deduplicate (some non-connectors have identical iso/ini)
+      const unique = [...new Set(allForms)];
+      if (unique.length > 0) {
+        // Pick one distractor at random
+        const d = unique[Math.floor(Math.random() * unique.length)];
+        tiles.push({ form: d, letter });
+      }
+    }
+  });
+
+  // Shuffle tiles
+  const shuffled = shuffle(tiles);
+
+  shuffled.forEach((td, i) => {
+    const cls  = formClass(td.form);
+    const lbl  = formLabel(td.form);
+
+    const tile = document.createElement('div');
+    tile.className = 'letter-tile ' + cls;
+    tile.dataset.bankIdx = i;
+    tile.dataset.form    = td.form;
+    tile.dataset.letter  = td.letter;
+    tile.draggable = true;
+    tile.innerHTML = `<span class="tile-glyph">${td.form}</span><span class="tile-label">${lbl}</span>`;
+
+    tile.addEventListener('dragstart', () => {
+      draggedTileIdx = i;
+      setTimeout(() => tile.classList.add('dragging'), 0);
+    });
+    tile.addEventListener('dragend', () => tile.classList.remove('dragging'));
+    tile.addEventListener('click',   () => clickTile(i, td.form));
+
+    bank.appendChild(tile);
+  });
+}
+
+// ─── Shapes panel ──────────────────────────────────────────
+function renderShapes() {
+  const row = document.getElementById('shapesRow');
+  row.innerHTML = '';
+  const seen = new Set();
+  currentWord.letters.forEach(letter => {
+    if (seen.has(letter)) return;
+    seen.add(letter);
+    const f = currentWord.forms[letter];
+    if (!f) return;
+
+    const cell = document.createElement('div');
+    cell.className = 'shape-cell';
+    cell.innerHTML = `
+      <div style="font-size:.62rem;color:#aaa;direction:ltr;font-family:system-ui;
+                  text-align:center;margin-bottom:.2rem;">${f.label}</div>
+      <div style="display:flex;gap:.3rem;direction:ltr;">
+        ${[['Isolated',f.iso],['Initial',f.ini],['Medial',f.med],['Final',f.fin]]
+          .filter(([,v]) => v && v !== '—')
+          .map(([lbl,v]) => `
+            <div class="shape-cell">
+              <span class="shape-ar">${v}</span>
+              <span class="shape-lbl">${lbl}</span>
+            </div>`).join('')}
+      </div>`;
+    row.appendChild(cell);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  DRAG & DROP  (parent drop-zone handlers)
+// ═══════════════════════════════════════════════════════════
+function onDragOver(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.add('drag-over');
+}
+function onDragLeave(e) {
+  if (!document.getElementById('dropZone').contains(e.relatedTarget)) {
+    document.getElementById('dropZone').classList.remove('drag-over');
+  }
+}
+function onDrop(e) {
+  e.preventDefault();
+  const emptyIdx = currentSlots.findIndex(s => s === '');
+  dropIntoSlot(emptyIdx === -1 ? 0 : emptyIdx);
+}
+
+function dropIntoSlot(preferIdx) {
+  document.getElementById('dropZone').classList.remove('drag-over');
+  if (draggedTileIdx === null) return;
+
+  let targetIdx = (currentSlots[preferIdx] === '') ? preferIdx
+                  : currentSlots.findIndex(s => s === '');
+  if (targetIdx === -1) return;
+
+  const tile = document.querySelector(`.letter-tile[data-bank-idx="${draggedTileIdx}"]`);
+  if (!tile || tile.classList.contains('used')) return;
+
+  currentSlots[targetIdx] = tile.dataset.form;   // store the form string
+  tile.classList.add('used');
+  draggedTileIdx = null;
+
+  renderDropZone();
+  maybeEnableCheck();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CLICK FALLBACK
+// ═══════════════════════════════════════════════════════════
+function clickTile(bankIdx, form) {
+  const tile = document.querySelector(`.letter-tile[data-bank-idx="${bankIdx}"]`);
+  if (!tile || tile.classList.contains('used')) return;
+  const emptyIdx = currentSlots.findIndex(s => s === '');
+  if (emptyIdx === -1) return;
+
+  currentSlots[emptyIdx] = form;
+  tile.classList.add('used');
+  renderDropZone();
+  maybeEnableCheck();
+}
+
+function removeFromSlot(slotIdx) {
+  const form = currentSlots[slotIdx];
+  if (!form) return;
+  currentSlots[slotIdx] = '';
+
+  // Re-enable the first used tile that has this exact form
+  const tile = [...document.querySelectorAll('.letter-tile.used')]
+    .find(t => t.dataset.form === form);
+  if (tile) tile.classList.remove('used');
+
+  renderDropZone();
+  maybeEnableCheck();
+}
+
+function clearSlots() {
+  currentSlots.fill('');
+  document.querySelectorAll('.letter-tile').forEach(t => t.classList.remove('used'));
+  renderDropZone();
+  const btn = document.getElementById('btnCheck');
+  btn.disabled = true;
+  btn.style.background = '#fff'; btn.style.color = '#999';
+  btn.style.border = '3px dashed #1a5c3a'; btn.style.cursor = 'not-allowed';
+  document.getElementById('feedback').className = 'feedback';
+}
+
+function maybeEnableCheck() {
+  const btn = document.getElementById('btnCheck');
+  const allFilled = currentSlots.every(s => s !== '');
+  btn.disabled = !allFilled;
+  if (allFilled) {
+    btn.style.background = '#1a5c3a'; btn.style.color = '#f5d98b';
+    btn.style.border = '3px solid transparent'; btn.style.cursor = 'pointer';
+  } else {
+    btn.style.background = '#fff'; btn.style.color = '#999';
+    btn.style.border = '3px dashed #1a5c3a'; btn.style.cursor = 'not-allowed';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHECK ANSWER  — compares against contextForms
+// ═══════════════════════════════════════════════════════════
+function checkAnswer() {
+  attempts++;
+  const correct = currentWord.contextForms;
+  const isCorrect = correct.every((f, i) => f === currentSlots[i]);
+
+  const slots = document.querySelectorAll('.letter-slot');
+  if (isCorrect) {
+    score++;
+    slots.forEach(s => { s.classList.add('correct'); s.classList.remove('filled'); });
+    updateScore();
+    setTimeout(showCelebration, 400);
+  } else {
+    slots.forEach((s, i) => {
+      if (currentSlots[i] && currentSlots[i] !== correct[i]) s.classList.add('wrong');
+    });
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback wrong-fb';
+    fb.textContent = '❌ Not quite — check both the letter AND its shape for each position!';
+    setTimeout(() => slots.forEach(s => s.classList.remove('wrong')), 700);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CELEBRATION
+// ═══════════════════════════════════════════════════════════
+const CELEBRATE_MSGS = [
+  ['🎉', 'Excellent!',     'Perfect letter shapes!'],
+  ['⭐',       'Amazing!',       'You know your Arabic forms!'],
+  ['🌟', 'Well done!',     'You\'re a word builder!'],
+  ['🏆', 'Fantastic!',     'Keep it up!'],
+  ['🎊', 'Brilliant!',     'Your Arabic is growing!'],
+  ['🦁', 'Roar! Correct!', 'You\'re unstoppable!'],
+];
+function showCelebration() {
+  const [em, title, sub] = CELEBRATE_MSGS[Math.floor(Math.random() * CELEBRATE_MSGS.length)];
+  document.getElementById('celebEmoji').textContent = em;
+  document.getElementById('celebTitle').textContent = title;
+  document.getElementById('celebSub').textContent   = sub + ' — ' + currentWord.ar + ' = ' + currentWord.en;
+  document.getElementById('celebrate').classList.add('show');
+}
+function nextWord() {
+  document.getElementById('celebrate').classList.remove('show');
+  qi++;
+  loadWord();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HINT / SCORE / PROGRESS
+// ═══════════════════════════════════════════════════════════
+function revealHint() {
+  document.getElementById('wordHint').classList.toggle('revealed');
+}
+function updateScore() {
+  document.getElementById('scorePill').textContent = `⭐ ${score} / ${attempts}`;
+}
+function updateProgress() {
+  const pct = Math.round((qi / WORDS.length) * 100);
+  document.getElementById('progFill').style.width = pct + '%';
+}
+
+// Start!
+init();
+</script>
+{% endblock %}

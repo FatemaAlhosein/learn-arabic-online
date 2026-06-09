@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}Session done — {{ deck.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <div class="text-center mb-4">
+      <i class="bi bi-stars display-3" style="color: var(--bh-gold-500);"></i>
+      <h1 class="h3 mt-2 mb-1">Session complete</h1>
+      <p class="text-muted">{{ deck.title }}</p>
+    </div>
+
+    <div class="card mb-4">
+      <div class="card-body text-center py-4">
+        <div class="display-3 fw-semibold"
+             style="color: var(--bh-green-700);">
+          {{ mastered_count }} / {{ total }}
+        </div>
+        <p class="text-muted mb-0">cards mastered</p>
+
+        {% if total > 0 %}
+          <div class="progress mt-3" style="height: .5rem;">
+            {% widthratio mastered_count total 100 as pct %}
+            <div class="progress-bar" role="progressbar"
+                 style="width: {{ pct }}%;"></div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if needs_practice %}
+      <h2 class="h6 text-uppercase text-muted mt-4 mb-3">
+        Cards that need more practice
+      </h2>
+      <ul class="list-group mb-4">
+        {% for r in needs_practice %}
+          <li class="list-group-item d-flex justify-content-between
+                     align-items-center">
+            <span>
+              <span lang="{{ r.flashcard.front_lang }}"
+                    class="me-2">{{ r.flashcard.front }}</span>
+              <span class="text-muted small">
+                {{ r.flashcard.back }}
+              </span>
+            </span>
+            <span class="small text-muted">
+              {{ r.times_correct }} / {{ r.times_seen }}
+              <span class="ms-1">
+                {% if r.streak > 0 %}
+                  <i class="bi bi-fire text-warning"
+                     title="{{ r.streak }} in a row"></i>
+                {% endif %}
+              </span>
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{% url 'flashcards:study_session' deck.id %}?i=0"
+         class="btn btn-primary">
+        <i class="bi bi-arrow-repeat me-1"></i>Study again
+      </a>
+      <a href="{% url 'flashcards:deck_intro' deck.id %}"
+         class="btn btn-outline-secondary">
+        Deck overview
+      </a>
+      <a href="{% url 'curriculum:lesson_detail' deck.lesson.course.slug deck.lesson.slug %}"
+         class="btn btn-outline-secondary">
+        Back to lesson
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

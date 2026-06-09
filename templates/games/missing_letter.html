@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block title %}Missing Letter — الحرف الناقص{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --g-orange: #d35400;
+  --g-amber:  #e67e22;
+  --g-green:  #27ae60;
+  --g-red:    #c0392b;
+  --g-paper:  #fffdf7;
+  --g-border: #e0d8c8;
+}
+.game-wrap { max-width: 680px; margin: 0 auto; font-family: system-ui, sans-serif; }
+
+/* ── Header ─────────────────────────────────────────── */
+.game-hdr {
+  background: var(--g-orange); border-radius: 1.25rem;
+  padding: 1.25rem 1.75rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 1rem; color: #fff; direction: ltr;
+}
+.game-hdr-icon { font-size: 2rem; line-height: 1; }
+.game-hdr h1 { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.game-hdr p  { font-size: .85rem; color: rgba(255,255,255,.8); margin: .15rem 0 0; }
+.score-pill {
+  margin-left: auto; background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 2rem; padding: .35rem 1rem;
+  font-weight: 700; font-size: .9rem; white-space: nowrap;
+}
+
+/* ── Progress ───────────────────────────────────────── */
+.prog-track {
+  height: 8px; background: var(--g-border);
+  border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden;
+}
+.prog-fill { height: 100%; background: var(--g-orange); border-radius: 4px; transition: width .4s; }
+
+/* ── Clue card ──────────────────────────────────────── */
+.game-card {
+  background: var(--g-paper); border: 1px solid var(--g-border);
+  border-radius: 1.25rem; padding: 1.75rem;
+  box-shadow: 0 4px 24px rgba(211,84,0,.1);
+  text-align: center; margin-bottom: 1.25rem;
+}
+.word-emoji   { font-size: 4.5rem; line-height: 1; margin-bottom: .5rem; }
+.word-meaning {
+  font-size: 1.1rem; color: #444; background: #fef0e6;
+  border-radius: .5rem; padding: .3rem .9rem; font-weight: 600;
+  display: inline-block; margin-bottom: 1.25rem;
+}
+
+/* ── Letter tiles (word display) ────────────────────── */
+.word-tiles {
+  display: flex; gap: .55rem; justify-content: center;
+  direction: rtl; flex-wrap: wrap; margin-bottom: .5rem;
+}
+.letter-tile {
+  width: 62px; height: 62px; border-radius: .7rem;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 2rem; font-weight: 700;
+  transition: all .25s;
+}
+.letter-tile.filled {
+  background: #fff3e6; border: 2.5px solid var(--g-amber);
+  color: var(--g-orange);
+}
+.letter-tile.blank {
+  background: #fff; border: 2.5px dashed #ccc; color: #bbb;
+  font-size: 1.5rem; font-family: system-ui, sans-serif;
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.letter-tile.correct-tile {
+  background: #d4efdf; border-color: var(--g-green); color: var(--g-green);
+  animation: popIn .3s;
+}
+.letter-tile.wrong-tile {
+  background: #fdecea; border-color: var(--g-red); color: var(--g-red);
+  animation: shake .35s;
+}
+
+/* hint — full diacritized word, click to reveal */
+.word-hint {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 1.3rem; color: rgba(211,84,0,.2);
+  direction: rtl; cursor: pointer; user-select: none;
+  transition: color .25s; margin-top: .3rem;
+  position: relative; display: inline-block;
+}
+.word-hint::after {
+  content: '👁 Hint'; font-size: .6rem; font-family: system-ui, sans-serif;
+  color: #bbb; position: absolute; bottom: -1rem; left: 50%; transform: translateX(-50%);
+  white-space: nowrap;
+}
+.word-hint.revealed { color: rgba(211,84,0,.55); }
+
+/* ── Choice buttons ─────────────────────────────────── */
+.choices {
+  display: flex; gap: .85rem; justify-content: center;
+  margin-bottom: 1rem; flex-wrap: wrap;
+}
+.choice-btn {
+  width: 90px; height: 90px; border-radius: 1rem;
+  border: 3px solid var(--g-border);
+  background: #fff; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: .2rem;
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 2.4rem; font-weight: 700; color: #333;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  transition: transform .12s, box-shadow .12s, border-color .15s, background .15s;
+  user-select: none;
+}
+.choice-btn:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 8px 20px rgba(0,0,0,.13);
+  border-color: var(--g-amber);
+}
+.choice-btn:active:not(:disabled) { transform: scale(.95); }
+.choice-btn:disabled { cursor: default; }
+.choice-btn.correct-choice {
+  background: #d4efdf; border-color: var(--g-green); color: var(--g-green);
+  animation: popIn .3s;
+}
+.choice-btn.wrong-choice {
+  background: #fdecea; border-color: var(--g-red); color: var(--g-red);
+  animation: shake .35s;
+}
+
+/* ── Feedback ───────────────────────────────────────── */
+.feedback {
+  max-width: 680px; margin: 0 auto .75rem; border-radius: .75rem;
+  padding: .85rem 1.25rem; font-weight: 700; font-size: 1rem;
+  text-align: center; display: none; direction: ltr;
+}
+.feedback.correct-fb { background: #d4efdf; color: #1e8449; display: block; }
+.feedback.wrong-fb   { background: #fdecea; color: #a93226; display: block; }
+
+/* ── Celebration ────────────────────────────────────── */
+.celebrate {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 9999; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.celebrate.show { display: flex; }
+.celebrate-box {
+  background: #fff; border-radius: 1.5rem; padding: 2.5rem 3rem;
+  text-align: center; box-shadow: 0 2rem 5rem rgba(0,0,0,.3); animation: popIn .4s;
+}
+.celebrate-emoji { font-size: 4rem; }
+.celebrate-title { font-size: 1.6rem; font-weight: 800; color: var(--g-orange); margin: .5rem 0; }
+.celebrate-sub   { color: #666; margin-bottom: 1.5rem; }
+.btn-next {
+  background: var(--g-orange); color: #fff; border: none; border-radius: .75rem;
+  padding: .85rem 2.5rem; font-size: 1.05rem; font-weight: 700;
+  cursor: pointer; font-family: system-ui, sans-serif;
+}
+
+/* ── Animations ─────────────────────────────────────── */
+@keyframes popIn {
+  0%   { transform: scale(.7); opacity: 0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-7px); }
+  40%     { transform: translateX(7px); }
+  60%     { transform: translateX(-4px); }
+  80%     { transform: translateX(4px); }
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; }
+  50%     { opacity: .4; }
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:hub' %}">Games</a></li>
+    <li class="breadcrumb-item active">Missing Letter</li>
+  </ol>
+</nav>
+
+<div class="game-wrap">
+
+  <!-- Header -->
+  <div class="game-hdr">
+    <div class="game-hdr-icon">❓</div>
+    <div>
+      <h1>Missing Letter — الحرف الناقص</h1>
+      <p>Find the missing letter to complete the Arabic word</p>
+    </div>
+    <div class="score-pill" id="scorePill">⭐ 0 / 0</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="prog-track">
+    <div class="prog-fill" id="progFill" style="width:0%"></div>
+  </div>
+
+  <!-- Clue card -->
+  <div class="game-card">
+    <div class="word-emoji" id="wordEmoji">🌟</div>
+    <div class="word-meaning" id="wordMeaning">Loading…</div>
+
+    <!-- Word tiles -->
+    <div class="word-tiles" id="wordTiles"></div>
+
+    <!-- Hint -->
+    <div class="word-hint" id="wordHint" onclick="revealHint()"></div>
+    <div style="height:1.4rem;"></div><!-- spacer for hint ::after -->
+  </div>
+
+  <!-- Choice buttons -->
+  <div class="choices" id="choices"></div>
+
+  <!-- Feedback -->
+  <div class="feedback" id="feedback"></div>
+
+</div><!-- /game-wrap -->
+
+<!-- Celebration -->
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-box">
+    <div class="celebrate-emoji" id="celebEmoji">🎉</div>
+    <div class="celebrate-title" id="celebTitle">Correct!</div>
+    <div class="celebrate-sub"   id="celebSub"></div>
+    <button class="btn-next" onclick="nextWord()">Next word →</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  WORD DATA
+//  letters[] = base letters (no diacritics)
+//  ar        = diacritized full word (shown as hint)
+//  miss      = index into letters[] that is hidden
+//  choices[] = [correct, distractor1, distractor2]  (will be shuffled)
+// ═══════════════════════════════════════════════════════════
+const WORDS = {{ words_json|safe }};
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+let queue       = [];
+let qi          = 0;
+let score       = 0;
+let attempts    = 0;
+let currentWord = null;
+let answered    = false;
+let shuffledChoices = [];
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+  if (!WORDS.length) {
+    document.getElementById('game-area').innerHTML =
+      '<div class="alert alert-info text-center mt-5"><i class="bi bi-info-circle me-2"></i>No missing-letter words yet — ask your teacher to add some!</div>';
+    return;
+  }
+  queue = shuffle([...Array(WORDS.length).keys()]);
+  qi = 0; score = 0; attempts = 0;
+  // Reset the celebration button back to per-word mode
+  const btn = document.querySelector('.btn-next');
+  btn.textContent = 'Next word →';
+  btn.onclick = nextWord;
+  updateScore();
+  loadWord();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOAD WORD
+// ═══════════════════════════════════════════════════════════
+function loadWord() {
+  if (qi >= queue.length) {
+    roundComplete();
+    return;
+  }
+  currentWord = WORDS[queue[qi]];
+  answered    = false;
+  shuffledChoices = shuffle([...currentWord.choices]);
+
+  document.getElementById('wordEmoji').textContent   = currentWord.emoji;
+  document.getElementById('wordMeaning').textContent = currentWord.en;
+  document.getElementById('wordHint').textContent    = currentWord.ar;
+  document.getElementById('wordHint').classList.remove('revealed');
+  document.getElementById('feedback').className      = 'feedback';
+  document.getElementById('feedback').textContent    = '';
+
+  renderTiles();
+  renderChoices();
+  updateProgress();
+}
+
+// ─── Word tiles ─────────────────────────────────────────────
+function renderTiles() {
+  const container = document.getElementById('wordTiles');
+  container.innerHTML = '';
+  currentWord.letters.forEach((letter, i) => {
+    const tile = document.createElement('div');
+    if (i === currentWord.miss) {
+      tile.className = 'letter-tile blank';
+      tile.id = 'blankTile';
+      tile.textContent = '?';
+    } else {
+      tile.className = 'letter-tile filled';
+      tile.textContent = letter;
+    }
+    container.appendChild(tile);
+  });
+}
+
+// ─── Choice buttons ─────────────────────────────────────────
+function renderChoices() {
+  const container = document.getElementById('choices');
+  container.innerHTML = '';
+  shuffledChoices.forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.dataset.letter = letter;
+    btn.textContent = letter;
+    btn.onclick = () => choose(btn, letter);
+    container.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CHOOSE A LETTER
+// ═══════════════════════════════════════════════════════════
+function choose(btn, letter) {
+  if (answered) return;
+  answered = true;
+  attempts++;
+
+  // Disable all buttons
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  const correct = currentWord.choices[0];  // choices[0] is always the right answer
+  const blankTile = document.getElementById('blankTile');
+
+  if (letter === correct) {
+    // Correct
+    score++;
+    btn.classList.add('correct-choice');
+    blankTile.textContent = letter;
+    blankTile.classList.remove('blank');
+    blankTile.classList.add('correct-tile');
+    updateScore();
+    setTimeout(showCelebration, 600);
+  } else {
+    // Wrong
+    btn.classList.add('wrong-choice');
+    blankTile.classList.add('wrong-tile');
+    // Briefly show the correct answer highlighted
+    setTimeout(() => {
+      document.querySelectorAll('.choice-btn').forEach(b => {
+        if (b.dataset.letter === correct) b.classList.add('correct-choice');
+      });
+      blankTile.classList.remove('wrong-tile');
+      blankTile.textContent = correct;
+      blankTile.classList.remove('blank');
+      blankTile.classList.add('correct-tile');
+    }, 500);
+
+    const fb = document.getElementById('feedback');
+    fb.className = 'feedback wrong-fb';
+    fb.textContent = `❌ Not quite! The missing letter is: ${correct}`;
+
+    // Auto-advance after delay
+    setTimeout(() => { qi++; loadWord(); }, 2800);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CELEBRATION
+// ═══════════════════════════════════════════════════════════
+const MSGS = [
+  ['🎉', 'Excellent!',      'That\'s the right letter!'],
+  ['⭐', 'Amazing!',        'You know your Arabic letters!'],
+  ['🌟', 'Well done!',      'Keep going!'],
+  ['🏆', 'Fantastic!',      'You\'re a letter expert!'],
+  ['🎊', 'Brilliant!',      'Your Arabic is growing!'],
+  ['🦁', 'Roar! Correct!',  'Nothing can stop you!'],
+];
+function showCelebration() {
+  const [em, title, sub] = MSGS[Math.floor(Math.random() * MSGS.length)];
+  document.getElementById('celebEmoji').textContent = em;
+  document.getElementById('celebTitle').textContent = title;
+  document.getElementById('celebSub').innerHTML =
+    sub + `<br><span style="font-family:'Scheherazade New',serif;font-size:1.6rem;direction:rtl;display:block;margin-top:.4rem;">${currentWord.ar} = ${currentWord.en}</span>`;
+  document.getElementById('celebrate').classList.add('show');
+}
+function nextWord() {
+  document.getElementById('celebrate').classList.remove('show');
+  qi++;
+  loadWord();
+}
+
+function roundComplete() {
+  const pct = Math.round((score / WORDS.length) * 100);
+  const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🌟' : pct >= 60 ? '⭐' : '💪';
+  const msg   = pct === 100 ? 'Perfect score!' : pct >= 80 ? 'Great work!' : pct >= 60 ? 'Good effort!' : 'Keep practising!';
+  document.getElementById('celebEmoji').textContent = emoji;
+  document.getElementById('celebTitle').textContent = 'Round Complete!';
+  document.getElementById('celebSub').innerHTML =
+    `${msg}<br>You got <strong>${score} out of ${WORDS.length}</strong> correct (${pct}%)`;
+  document.getElementById('progFill').style.width = '100%';
+  const btn = document.querySelector('.btn-next');
+  btn.textContent = '🔄 Play Again';
+  btn.onclick = init;
+  document.getElementById('celebrate').classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HINT / SCORE / PROGRESS
+// ═══════════════════════════════════════════════════════════
+function revealHint() {
+  document.getElementById('wordHint').classList.toggle('revealed');
+}
+function updateScore() {
+  document.getElementById('scorePill').textContent = `⭐ ${score} / ${WORDS.length}`;
+}
+function updateProgress() {
+  document.getElementById('progFill').style.width =
+    Math.round((qi / WORDS.length) * 100) + '%';
+}
+
+// Start!
+init();
+</script>
+{% endblock %}

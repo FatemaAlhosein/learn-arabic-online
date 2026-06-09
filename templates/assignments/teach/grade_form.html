@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Grade submission — {{ assignment.title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item">
+      <a href="{% url 'assignments:submission_list' assignment.id %}">{{ assignment.title }}</a>
+    </li>
+    <li class="breadcrumb-item active">Grade submission</li>
+  </ol>
+</nav>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div style="font-size:2rem;line-height:1;">✏️</div>
+  <div>
+    <h1 class="h3 mb-0">Grade submission</h1>
+    <p class="text-muted mb-0 small">
+      {{ submission.student.user.get_full_name|default:submission.student.user.email }}
+      — {{ assignment.title }}
+    </p>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  {# ── Left: student's submission ── #}
+  <div class="col-lg-7">
+
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-person me-1"></i>
+        {{ submission.student.user.get_full_name|default:submission.student.user.email }}'s work
+      </div>
+      <div class="card-body">
+
+        {% if submission.submitted_at %}
+          <p class="small text-muted mb-3">
+            <i class="bi bi-clock me-1"></i>Submitted {{ submission.submitted_at|date:"j N Y, g:i a" }}
+          </p>
+        {% endif %}
+
+        {% if submission.text_response %}
+          <div class="mb-4">
+            <div class="fw-semibold small text-muted text-uppercase mb-2">Written response</div>
+            <div class="p-3 bg-light rounded border" style="white-space:pre-wrap;line-height:1.7;">{{ submission.text_response }}</div>
+          </div>
+        {% endif %}
+
+        {% if submission.file %}
+          <div class="d-flex align-items-center gap-3 p-3 bg-light rounded border">
+            <i class="bi bi-paperclip fs-4 text-muted"></i>
+            <div>
+              <div class="fw-semibold small">Attached file</div>
+              <a href="{{ submission.file.url }}" target="_blank" class="small text-decoration-none">
+                {{ submission.file.name|cut:"assignment_submissions/" }}
+                <i class="bi bi-box-arrow-up-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        {% endif %}
+
+        {% if not submission.text_response and not submission.file %}
+          <p class="text-muted text-center py-3">No content submitted yet.</p>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {# Assignment instructions (collapsed) #}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header fw-semibold" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#instructionsCollapse">
+        <i class="bi bi-journal-text me-1"></i>Assignment instructions
+        <i class="bi bi-chevron-down ms-auto float-end mt-1"></i>
+      </div>
+      <div class="collapse" id="instructionsCollapse">
+        <div class="card-body">
+          {{ assignment.instructions|linebreaks }}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Right: grading form ── #}
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm sticky-lg-top" style="top:1rem;">
+      <div class="card-header fw-semibold bg-primary text-white">
+        <i class="bi bi-award me-1"></i>Grade this submission
+      </div>
+      <div class="card-body">
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-4">
+            <label for="{{ form.score.id_for_label }}" class="form-label fw-semibold">
+              Score <span class="text-danger">*</span>
+            </label>
+            <div class="d-flex align-items-center gap-2">
+              {{ form.score }}
+              <span class="text-muted fw-semibold">/ {{ assignment.max_score }}</span>
+            </div>
+            {% if form.score.errors %}
+              <div class="text-danger small mt-1">{{ form.score.errors|join:", " }}</div>
+            {% endif %}
+
+            {# Quick score buttons #}
+            <div class="mt-2 d-flex flex-wrap gap-1">
+              <button type="button" class="btn btn-outline-secondary btn-sm quick-score" data-max="{{ assignment.max_score }}" data-pct="100">100%</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm quick-score" data-max="{{ assignment.max_score }}" data-pct="90">90%</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm quick-score" data-max="{{ assignment.max_score }}" data-pct="80">80%</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm quick-score" data-max="{{ assignment.max_score }}" data-pct="70">70%</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm quick-score" data-max="{{ assignment.max_score }}" data-pct="60">60%</button>
+              <button type="button" class="btn btn-outline-secondary btn-sm quick-score" data-max="{{ assignment.max_score }}" data-pct="50">50%</button>
+            </div>
+            <div class="form-text">Click a percentage to auto-fill the score.</div>
+          </div>
+
+          <div class="mb-4">
+            <label for="{{ form.feedback.id_for_label }}" class="form-label fw-semibold">
+              {{ form.feedback.label }}
+            </label>
+            {{ form.feedback }}
+            <div class="form-text">This feedback will be shown to the student.</div>
+            {% if form.feedback.errors %}
+              <div class="text-danger small mt-1">{{ form.feedback.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger small">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-check-lg me-1"></i>Save grade
+            </button>
+            <a href="{% url 'assignments:submission_list' assignment.id %}"
+               class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Quick score percentage buttons
+document.querySelectorAll('.quick-score').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const max = parseInt(btn.dataset.max);
+    const pct = parseInt(btn.dataset.pct);
+    const score = Math.round(max * pct / 100);
+    document.getElementById('{{ form.score.id_for_label }}').value = score;
+  });
+});
+</script>
+
+{% endblock %}

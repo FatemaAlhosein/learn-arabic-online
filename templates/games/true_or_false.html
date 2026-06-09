@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% block title %}True or False — صح أم خطأ{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --g-purple: #6c3fc5;
+  --g-true:   #1a8c4e;
+  --g-false:  #c0392b;
+  --g-paper:  #fffdf7;
+  --g-border: #e0d8c8;
+}
+.game-wrap { max-width: 640px; margin: 0 auto; font-family: system-ui, sans-serif; }
+
+/* ── Header ─────────────────────────────────────────── */
+.game-hdr {
+  background: var(--g-purple); border-radius: 1.25rem;
+  padding: 1.25rem 1.75rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 1rem; color: #fff; direction: ltr;
+}
+.game-hdr-icon { font-size: 2rem; line-height: 1; }
+.game-hdr h1 { font-size: 1.25rem; font-weight: 700; margin: 0; }
+.game-hdr p  { font-size: .85rem; color: rgba(255,255,255,.8); margin: .15rem 0 0; }
+.score-pill {
+  margin-left: auto; background: rgba(255,255,255,.2);
+  border: 1px solid rgba(255,255,255,.35);
+  border-radius: 2rem; padding: .35rem 1rem;
+  font-weight: 700; font-size: .9rem; white-space: nowrap;
+}
+
+/* ── Progress ───────────────────────────────────────── */
+.prog-track {
+  height: 8px; background: var(--g-border);
+  border-radius: 4px; margin-bottom: 1.5rem; overflow: hidden;
+}
+.prog-fill { height: 100%; background: var(--g-purple); border-radius: 4px; transition: width .4s; }
+
+/* ── Question card ──────────────────────────────────── */
+.game-card {
+  background: var(--g-paper); border: 1px solid var(--g-border);
+  border-radius: 1.25rem; padding: 2rem 1.75rem;
+  box-shadow: 0 4px 24px rgba(108,63,197,.1);
+  text-align: center; margin-bottom: 1.25rem;
+  transition: background .25s;
+}
+.game-card.flash-true  { background: #d4f7e4; }
+.game-card.flash-false { background: #fdecea; }
+
+.q-emoji    { font-size: 5rem; line-height: 1; margin-bottom: .85rem; }
+.q-counter  {
+  font-size: .72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .1em; color: #aaa; margin-bottom: .85rem;
+}
+.q-arabic {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 2.2rem; font-weight: 700; color: #222;
+  direction: rtl; line-height: 1.5; margin-bottom: .5rem;
+}
+.q-english {
+  font-size: .9rem; color: #888; margin-bottom: 0;
+}
+
+/* ── Answer buttons ─────────────────────────────────── */
+.answer-row {
+  display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem;
+}
+.ans-btn {
+  flex: 1; max-width: 240px; padding: 1.1rem 1rem;
+  border-radius: 1rem; border: 3px solid transparent;
+  font-size: 1.3rem; font-weight: 800; cursor: pointer;
+  font-family: system-ui, sans-serif;
+  display: flex; flex-direction: column; align-items: center; gap: .2rem;
+  transition: transform .12s, box-shadow .12s, filter .15s;
+  box-shadow: 0 4px 14px rgba(0,0,0,.1);
+}
+.ans-btn:hover:not(:disabled) {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 8px 22px rgba(0,0,0,.16);
+}
+.ans-btn:active:not(:disabled) { transform: scale(.96); }
+.ans-btn:disabled { cursor: default; filter: grayscale(.4) opacity(.75); }
+
+.btn-true  { background: #e8f8f0; border-color: var(--g-true);  color: var(--g-true); }
+.btn-false { background: #fdecea; border-color: var(--g-false); color: var(--g-false); }
+
+.ans-btn .btn-icon { font-size: 1.8rem; line-height: 1; }
+.ans-btn .btn-ar   {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 1.4rem; font-weight: 700;
+}
+.ans-btn .btn-en   { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; opacity: .75; }
+
+/* selected states */
+.ans-btn.selected-correct { background: #27ae60; color: #fff; border-color: #27ae60; animation: popIn .25s; }
+.ans-btn.selected-wrong   { background: #c0392b; color: #fff; border-color: #c0392b; animation: shake .35s; }
+.ans-btn.reveal-correct   { background: #27ae60; color: #fff; border-color: #27ae60; }
+
+/* ── Feedback ───────────────────────────────────────── */
+.feedback {
+  max-width: 640px; margin: 0 auto .75rem; border-radius: .75rem;
+  padding: .85rem 1.25rem; font-weight: 700; font-size: .95rem;
+  text-align: center; display: none;
+}
+.feedback.correct-fb { background: #d4efdf; color: #1e8449; display: block; }
+.feedback.wrong-fb   { background: #fdecea; color: #a93226; display: block; }
+
+/* ── Celebration ────────────────────────────────────── */
+.celebrate {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 9999; align-items: center; justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.celebrate.show { display: flex; }
+.celebrate-box {
+  background: #fff; border-radius: 1.5rem; padding: 2.5rem 3rem;
+  text-align: center; box-shadow: 0 2rem 5rem rgba(0,0,0,.3); animation: popIn .4s;
+  max-width: 400px; width: 90%;
+}
+.celebrate-emoji { font-size: 4rem; }
+.celebrate-title { font-size: 1.6rem; font-weight: 800; color: var(--g-purple); margin: .5rem 0; }
+.celebrate-sub   { color: #666; margin-bottom: 1.5rem; font-size: .95rem; line-height: 1.5; }
+.btn-next {
+  background: var(--g-purple); color: #fff; border: none; border-radius: .75rem;
+  padding: .85rem 2.5rem; font-size: 1.05rem; font-weight: 700;
+  cursor: pointer; font-family: system-ui, sans-serif;
+}
+
+/* ── Streak badge ───────────────────────────────────── */
+.streak-badge {
+  display: none; position: fixed; top: 5rem; left: 50%;
+  transform: translateX(-50%); z-index: 8888;
+  background: #fff3cd; border: 2px solid #ffc107; border-radius: 2rem;
+  padding: .4rem 1.1rem; font-weight: 800; font-size: .95rem;
+  animation: popIn .3s, fadeOut .4s 1.5s forwards;
+  pointer-events: none;
+}
+
+/* ── Animations ─────────────────────────────────────── */
+@keyframes popIn {
+  0%   { transform: translateX(-50%) scale(.7); opacity: 0; }
+  70%  { transform: translateX(-50%) scale(1.08); }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-7px); }
+  40%     { transform: translateX(7px); }
+  60%     { transform: translateX(-4px); }
+  80%     { transform: translateX(4px); }
+}
+@keyframes fadeOut {
+  to { opacity: 0; }
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:hub' %}">Games</a></li>
+    <li class="breadcrumb-item active">True or False</li>
+  </ol>
+</nav>
+
+<div class="game-wrap">
+
+  <!-- Header -->
+  <div class="game-hdr">
+    <div class="game-hdr-icon">✅</div>
+    <div>
+      <h1>True or False — صح أم خطأ</h1>
+      <p>Does the Arabic sentence match the picture? Tap your answer!</p>
+    </div>
+    <div class="score-pill" id="scorePill">⭐ 0 / 20</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="prog-track">
+    <div class="prog-fill" id="progFill" style="width:0%"></div>
+  </div>
+
+  <!-- Question card -->
+  <div class="game-card" id="gameCard">
+    <div class="q-counter" id="qCounter">Question 1 of 20</div>
+    <div class="q-emoji"   id="qEmoji">🌟</div>
+    <div class="q-arabic"  id="qArabic">…</div>
+    <div class="q-english" id="qEnglish">…</div>
+  </div>
+
+  <!-- Answer buttons -->
+  <div class="answer-row">
+    <button class="ans-btn btn-true" id="btnTrue" onclick="answer(true)">
+      <span class="btn-icon">✅</span>
+      <span class="btn-ar">صَحِيح</span>
+      <span class="btn-en">True</span>
+    </button>
+    <button class="ans-btn btn-false" id="btnFalse" onclick="answer(false)">
+      <span class="btn-icon">❌</span>
+      <span class="btn-ar">خَطَأ</span>
+      <span class="btn-en">False</span>
+    </button>
+  </div>
+
+  <!-- Feedback -->
+  <div class="feedback" id="feedback"></div>
+
+</div><!-- /game-wrap -->
+
+<!-- Streak toast -->
+<div class="streak-badge" id="streakBadge"></div>
+
+<!-- Celebration / round complete -->
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-box">
+    <div class="celebrate-emoji" id="celebEmoji">🎉</div>
+    <div class="celebrate-title" id="celebTitle">Correct!</div>
+    <div class="celebrate-sub"   id="celebSub"></div>
+    <button class="btn-next" id="celebBtn" onclick="nextQuestion()">Next →</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  QUESTION DATA
+//  answer: true  = sentence correctly describes the emoji
+//          false = sentence is wrong / silly
+// ═══════════════════════════════════════════════════════════
+const QUESTIONS = {{ questions_json|safe }};
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+let queue       = [];
+let qi          = 0;
+let score       = 0;
+let streak      = 0;
+let currentQ    = null;
+let answered    = false;
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+function init() {
+  if (!QUESTIONS.length) {
+    document.getElementById('game-area').innerHTML =
+      '<div class="alert alert-info text-center mt-5"><i class="bi bi-info-circle me-2"></i>No True/False questions yet — ask your teacher to add some!</div>';
+    return;
+  }
+  queue = shuffle([...Array(QUESTIONS.length).keys()]);
+  qi = 0; score = 0; streak = 0;
+  const btn = document.getElementById('celebBtn');
+  btn.textContent = 'Next →';
+  btn.onclick = nextQuestion;
+  updateScore();
+  loadQuestion();
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOAD QUESTION
+// ═══════════════════════════════════════════════════════════
+function loadQuestion() {
+  if (qi >= queue.length) {
+    roundComplete();
+    return;
+  }
+  currentQ = QUESTIONS[queue[qi]];
+  answered = false;
+
+  document.getElementById('qCounter').textContent = `Question ${qi + 1} of ${QUESTIONS.length}`;
+  document.getElementById('qEmoji').textContent   = currentQ.emoji;
+  document.getElementById('qArabic').textContent  = currentQ.ar;
+  document.getElementById('qEnglish').textContent = currentQ.en;
+  document.getElementById('feedback').className   = 'feedback';
+  document.getElementById('feedback').textContent = '';
+
+  const card = document.getElementById('gameCard');
+  card.classList.remove('flash-true', 'flash-false');
+
+  // Re-enable buttons
+  const btnT = document.getElementById('btnTrue');
+  const btnF = document.getElementById('btnFalse');
+  btnT.disabled = false; btnF.disabled = false;
+  btnT.className = 'ans-btn btn-true';
+  btnF.className = 'ans-btn btn-false';
+
+  updateProgress();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ANSWER
+// ═══════════════════════════════════════════════════════════
+function answer(chosen) {
+  if (answered) return;
+  answered = true;
+
+  const btnT = document.getElementById('btnTrue');
+  const btnF = document.getElementById('btnFalse');
+  btnT.disabled = true;
+  btnF.disabled = true;
+
+  const correct = currentQ.answer;
+  const isRight = chosen === correct;
+  const card    = document.getElementById('gameCard');
+  const fb      = document.getElementById('feedback');
+  const chosenBtn = chosen ? btnT : btnF;
+
+  if (isRight) {
+    score++;
+    streak++;
+    chosenBtn.classList.add('selected-correct');
+    card.classList.add('flash-true');
+    updateScore();
+
+    // Streak toast at 3, 5, 7, 10
+    if (streak === 3 || streak === 5 || streak === 7 || streak === 10) {
+      showStreak(streak);
+    }
+
+    fb.className = 'feedback correct-fb';
+    fb.textContent = streak >= 3
+      ? `🔥 Correct! ${streak} in a row!`
+      : '✅ Correct!';
+
+    setTimeout(() => { qi++; loadQuestion(); }, 1400);
+  } else {
+    streak = 0;
+    chosenBtn.classList.add('selected-wrong');
+    card.classList.add('flash-false');
+
+    // Highlight the correct button after a beat
+    setTimeout(() => {
+      const correctBtn = correct ? btnT : btnF;
+      correctBtn.classList.add('reveal-correct');
+    }, 350);
+
+    fb.className = 'feedback wrong-fb';
+    fb.innerHTML = `❌ Not quite — the sentence is <strong>${correct ? 'TRUE ✅' : 'FALSE ❌'}</strong>`;
+
+    setTimeout(() => { qi++; loadQuestion(); }, 2400);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  STREAK TOAST
+// ═══════════════════════════════════════════════════════════
+function showStreak(n) {
+  const badge = document.getElementById('streakBadge');
+  badge.textContent = `🔥 ${n} in a row!`;
+  badge.style.display = 'block';
+  badge.style.animation = 'none';
+  // re-trigger animation
+  void badge.offsetWidth;
+  badge.style.animation = 'popIn .3s, fadeOut .4s 1.5s forwards';
+  setTimeout(() => badge.style.display = 'none', 2000);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  ROUND COMPLETE
+// ═══════════════════════════════════════════════════════════
+function roundComplete() {
+  const total = QUESTIONS.length;
+  const pct   = Math.round((score / total) * 100);
+  const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🌟' : pct >= 60 ? '⭐' : '💪';
+  const msg   = pct === 100 ? 'Perfect score! You got them all!' :
+                pct >= 80   ? 'Great job! Almost perfect!' :
+                pct >= 60   ? 'Good effort! Keep practising!' :
+                              'Keep going — you\'ll get there!';
+  document.getElementById('celebEmoji').textContent = emoji;
+  document.getElementById('celebTitle').textContent = 'Round Complete!';
+  document.getElementById('celebSub').innerHTML =
+    `${msg}<br><br>You scored <strong>${score} out of ${total}</strong> (${pct}%)`;
+  document.getElementById('progFill').style.width = '100%';
+  const btn = document.getElementById('celebBtn');
+  btn.textContent = '🔄 Play Again';
+  btn.onclick = init;
+  document.getElementById('celebrate').classList.add('show');
+}
+
+function nextQuestion() {
+  document.getElementById('celebrate').classList.remove('show');
+  qi++;
+  loadQuestion();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SCORE / PROGRESS
+// ═══════════════════════════════════════════════════════════
+function updateScore() {
+  document.getElementById('scorePill').textContent = `⭐ ${score} / ${QUESTIONS.length}`;
+}
+function updateProgress() {
+  document.getElementById('progFill').style.width =
+    Math.round((qi / QUESTIONS.length) * 100) + '%';
+}
+
+// Start!
+init();
+</script>
+{% endblock %}

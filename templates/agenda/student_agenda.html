@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}My Agenda — {{ SITE_NAME }}{% endblock %}
+
+{% block extra_head %}
+<style>
+.day-col { min-width: 0; }
+.day-header { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+.today-col .day-header { color: var(--bs-primary); }
+.today-col .day-card  { border: 2px solid var(--bs-primary) !important; }
+.agenda-item { border-radius: .6rem; padding: .6rem .75rem; margin-bottom: .5rem; cursor: pointer; transition: opacity .15s; }
+.agenda-item.done { opacity: .5; text-decoration: line-through; }
+.item-lesson   { background: #e8f4fd; border-left: 3px solid #0d6efd; }
+.item-homework { background: #fff8e1; border-left: 3px solid #ffc107; }
+.item-quiz     { background: #f3e8ff; border-left: 3px solid #6f42c1; }
+.item-event    { background: #e8f8f0; border-left: 3px solid #198754; }
+.item-reminder { background: #fff3cd; border-left: 3px solid #fd7e14; }
+.item-note     { background: #f8f9fa; border-left: 3px solid #6c757d; }
+.schedule-chip { font-size: .72rem; background: #eef2ff; border-radius: .4rem; padding: .2rem .5rem; margin-bottom: .3rem; color: #3730a3; }
+.week-nav .btn { font-size: .85rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">My Agenda</li>
+  </ol>
+</nav>
+
+{# ── Header ── #}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <div style="font-size:2.5rem;line-height:1;">📅</div>
+    <div>
+      <h1 class="h3 mb-0">My Agenda</h1>
+      <p class="text-muted mb-0 small">
+        {{ monday|date:"j N" }} — {{ sunday|date:"j N Y" }}
+      </p>
+    </div>
+  </div>
+  <div class="week-nav d-flex gap-2 align-items-center">
+    <a href="?w={{ prev_offset }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-chevron-left"></i> Prev week
+    </a>
+    {% if offset != 0 %}
+      <a href="?w=0" class="btn btn-outline-primary btn-sm">Today</a>
+    {% endif %}
+    <a href="?w={{ next_offset }}" class="btn btn-outline-secondary btn-sm">
+      Next week <i class="bi bi-chevron-right"></i>
+    </a>
+  </div>
+</div>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+{# ── Legend ── #}
+<div class="d-flex flex-wrap gap-2 mb-4 small">
+  <span class="agenda-item item-lesson py-1 px-2 mb-0">📘 Lesson</span>
+  <span class="agenda-item item-homework py-1 px-2 mb-0">📝 Homework</span>
+  <span class="agenda-item item-quiz py-1 px-2 mb-0">❓ Quiz</span>
+  <span class="agenda-item item-event py-1 px-2 mb-0">🎉 Event</span>
+  <span class="agenda-item item-reminder py-1 px-2 mb-0">🔔 Reminder</span>
+  <span class="agenda-item item-note py-1 px-2 mb-0">💬 Note</span>
+</div>
+
+{# ── Weekly grid ── #}
+<div class="row g-3">
+  {% for day in days %}
+    <div class="col-sm-6 col-lg day-col {% if day.is_today %}today-col{% endif %}">
+      <div class="card h-100 border-0 shadow-sm day-card">
+        <div class="card-header py-2 {% if day.is_today %}bg-primary text-white{% else %}bg-light{% endif %}">
+          <div class="day-header">{{ day.date|date:"l" }}</div>
+          <div class="small {% if day.is_today %}opacity-75{% else %}text-muted{% endif %}">
+            {{ day.date|date:"j N" }}{% if day.is_today %} — Today{% endif %}
+          </div>
+        </div>
+        <div class="card-body p-2">
+
+          {# Class schedule chips #}
+          {% for slot in day.schedule %}
+            <div class="schedule-chip">
+              <i class="bi bi-clock me-1"></i>
+              {{ slot.start_time|time:"H:i" }}–{{ slot.end_time|time:"H:i" }}
+              {{ slot.course.title|truncatechars:18 }}
+              {% if slot.location %}<span class="text-muted">· {{ slot.location }}</span>{% endif %}
+            </div>
+          {% endfor %}
+
+          {# Agenda items #}
+          {% for item in day.items %}
+            <div class="agenda-item item-{{ item.kind }} {% if item.student_task and item.student_task.is_done %}done{% endif %}"
+                 data-item-id="{{ item.id }}"
+                 onclick="toggleTask(this, {{ item.id }})">
+              <div class="fw-semibold small">{{ item.get_kind_display }} {{ item.title }}</div>
+              {% if item.description %}
+                <div class="text-muted" style="font-size:.75rem;">{{ item.description|truncatechars:60 }}</div>
+              {% endif %}
+              <div class="d-flex flex-wrap gap-2 mt-1" style="font-size:.72rem;">
+                {% if item.due_time %}
+                  <span class="text-muted"><i class="bi bi-clock me-1"></i>{{ item.due_time|time:"H:i" }}</span>
+                {% endif %}
+                <span class="text-muted">{{ item.course.title|truncatechars:20 }}</span>
+                {% if item.linked_lesson %}
+                  <a href="{% url 'curriculum:lesson_detail' item.course.slug item.linked_lesson.slug %}"
+                     class="text-primary text-decoration-none" onclick="event.stopPropagation()">
+                    <i class="bi bi-arrow-right me-1"></i>Go to lesson
+                  </a>
+                {% endif %}
+                {% if item.linked_assignment %}
+                  <a href="{% url 'assignments:assignment_detail' item.linked_assignment.id %}"
+                     class="text-warning text-decoration-none" onclick="event.stopPropagation()">
+                    <i class="bi bi-clipboard me-1"></i>Assignment
+                  </a>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            {% if not day.schedule %}
+              <p class="text-muted text-center small mt-3">Nothing scheduled</p>
+            {% endif %}
+          {% endfor %}
+
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+<script>
+const TOGGLE_URL = "{% url 'agenda:toggle_task' 0 %}".replace('/0/', '/');
+const CSRF = '{{ csrf_token }}';
+
+async function toggleTask(el, id) {
+  const res = await fetch(TOGGLE_URL + id + '/', {
+    method: 'POST',
+    headers: {'X-CSRFToken': CSRF, 'Content-Type': 'application/json'},
+  });
+  if (res.ok) {
+    const data = await res.json();
+    el.classList.toggle('done', data.is_done);
+  }
+}
+</script>
+{% endblock %}

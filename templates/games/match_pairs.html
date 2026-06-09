@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% block title %}Match the Pair — مطابقة الكلمات{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --g-green:  #1a5c3a;
+  --g-gold:   #c89b3c;
+  --g-blue:   #1a4d8c;
+  --g-red:    #c0392b;
+  --g-paper:  #fffdf7;
+  --g-border: #e0d8c8;
+  --g-bg:     #f0ebe0;
+}
+
+.game-wrap { max-width: 860px; margin: 0 auto; font-family: system-ui, sans-serif; }
+
+/* ── Header ──────────────────────────────────────────── */
+.game-hdr {
+  background: var(--g-green); border-radius: 1.25rem;
+  padding: 1.1rem 1.75rem; margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: 1rem; color: #fff; direction: ltr;
+}
+.game-hdr h1  { font-size: 1.2rem; font-weight: 700; margin: 0; }
+.game-hdr p   { font-size: .82rem; color: rgba(255,255,255,.72); margin: .1rem 0 0; }
+.stat-pills   { margin-left: auto; display: flex; gap: .5rem; }
+.stat-pill {
+  background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
+  border-radius: 2rem; padding: .3rem .9rem;
+  font-size: .85rem; font-weight: 700; white-space: nowrap;
+}
+
+/* ── Toolbar ─────────────────────────────────────────── */
+.toolbar-row {
+  display: flex; align-items: center; gap: .75rem;
+  margin-bottom: 1.25rem; flex-wrap: wrap; direction: ltr;
+}
+.level-btn {
+  border: 2px solid var(--g-border); border-radius: 2rem;
+  background: #fff; color: #555; font-size: .82rem; font-weight: 700;
+  padding: .35rem .95rem; cursor: pointer; transition: all .15s;
+  font-family: system-ui, sans-serif;
+}
+.level-btn.active { background: var(--g-green); color: #f5d98b; border-color: var(--g-green); }
+.level-btn:hover:not(.active) { border-color: var(--g-green); color: var(--g-green); }
+.btn-restart {
+  margin-left: auto; background: transparent; border: 2px solid var(--g-border);
+  border-radius: 2rem; padding: .35rem 1.1rem; font-size: .82rem; font-weight: 700;
+  color: #666; cursor: pointer; font-family: system-ui, sans-serif; transition: all .15s;
+}
+.btn-restart:hover { border-color: var(--g-green); color: var(--g-green); }
+
+/* ── Timer bar ───────────────────────────────────────── */
+.timer-track {
+  height: 6px; background: var(--g-border); border-radius: 3px;
+  margin-bottom: 1.25rem; overflow: hidden;
+}
+.timer-fill {
+  height: 100%; background: var(--g-green);
+  border-radius: 3px; transition: width .95s linear, background .3s;
+}
+.timer-fill.warn  { background: #e67e22; }
+.timer-fill.danger{ background: var(--g-red); }
+
+/* ── Card grid ───────────────────────────────────────── */
+.card-grid {
+  display: grid; gap: .85rem;
+  margin-bottom: 1.5rem;
+}
+.card-grid.easy   { grid-template-columns: repeat(4, 1fr); }
+.card-grid.medium { grid-template-columns: repeat(4, 1fr); }
+.card-grid.hard   { grid-template-columns: repeat(5, 1fr); }
+
+/* ── Flip card ───────────────────────────────────────── */
+.flip-card {
+  aspect-ratio: 3/4; perspective: 800px; cursor: pointer;
+}
+.flip-inner {
+  width: 100%; height: 100%; position: relative;
+  transform-style: preserve-3d; transition: transform .42s ease;
+  border-radius: .9rem;
+}
+.flip-card.flipped  .flip-inner { transform: rotateY(180deg); }
+.flip-card.matched  .flip-inner { transform: rotateY(180deg); }
+.flip-card.matched  .card-front { pointer-events: none; }
+
+.card-front, .card-back {
+  position: absolute; inset: 0; border-radius: .9rem;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  user-select: none;
+}
+
+/* BACK — face-down design */
+.card-back {
+  background: var(--g-green);
+  background-image: repeating-linear-gradient(
+    45deg, rgba(255,255,255,.04) 0px, rgba(255,255,255,.04) 2px,
+    transparent 2px, transparent 12px);
+  border: 3px solid #155232;
+  box-shadow: 0 4px 16px rgba(26,92,58,.2);
+}
+.card-back-star { font-size: 2rem; color: rgba(245,217,139,.6); }
+
+/* FRONT — revealed face */
+.card-front {
+  transform: rotateY(180deg);
+  background: var(--g-paper);
+  border: 2.5px solid var(--g-border);
+  box-shadow: 0 4px 16px rgba(0,0,0,.08);
+  padding: .5rem;
+  gap: .35rem;
+}
+.flip-card.matched .card-front {
+  background: #e8f5ee; border-color: #2ecc71;
+  box-shadow: 0 0 0 3px rgba(46,204,113,.3);
+}
+.flip-card.wrong-flash .card-front {
+  background: #fdecea; border-color: var(--g-red);
+  animation: shake .35s;
+}
+
+/* emoji card */
+.card-emoji  { font-size: clamp(2rem, 6vw, 3rem); line-height: 1; }
+.card-type   { font-size: .6rem; font-weight: 700; letter-spacing: .1em;
+               text-transform: uppercase; color: #bbb; }
+
+/* Arabic word card */
+.card-ar {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: clamp(1.4rem, 4vw, 2.1rem); font-weight: 700;
+  color: var(--g-green); direction: rtl; text-align: center;
+  line-height: 1.3;
+}
+.card-en {
+  font-size: clamp(.6rem, 1.8vw, .75rem); color: #aaa;
+  font-family: Georgia, serif; font-style: italic; text-align: center;
+}
+
+/* ── Results panel ───────────────────────────────────── */
+.result-panel {
+  display: none; text-align: center;
+  background: var(--g-paper); border: 1px solid var(--g-border);
+  border-radius: 1.25rem; padding: 2.5rem 2rem;
+  box-shadow: 0 4px 24px rgba(26,92,58,.1);
+  animation: popIn .4s;
+}
+.result-panel.show { display: block; }
+.result-emoji  { font-size: 4rem; margin-bottom: .5rem; }
+.result-title  { font-size: 1.6rem; font-weight: 800; color: var(--g-green); margin-bottom: .4rem; }
+.result-stat   { font-size: 1rem; color: #666; margin-bottom: 1.5rem; }
+.star-row      { font-size: 2.5rem; margin-bottom: 1.5rem; letter-spacing: .15rem; }
+.btn-play-again {
+  background: var(--g-green); color: #f5d98b; border: none;
+  border-radius: .75rem; padding: .85rem 2.5rem;
+  font-size: 1.05rem; font-weight: 700; cursor: pointer;
+  font-family: system-ui, sans-serif; transition: background .15s;
+}
+.btn-play-again:hover { background: #134830; }
+
+/* ── Animations ──────────────────────────────────────── */
+@keyframes popIn {
+  0%   { transform: scale(.75); opacity: 0; }
+  70%  { transform: scale(1.04); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes shake {
+  0%,100% { transform: rotateY(180deg) translateX(0); }
+  25%     { transform: rotateY(180deg) translateX(-6px); }
+  75%     { transform: rotateY(180deg) translateX(6px); }
+}
+
+/* ── Responsive ──────────────────────────────────────── */
+@media (max-width: 500px) {
+  .card-grid.easy   { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.medium { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.hard   { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:hub' %}">Games</a></li>
+    <li class="breadcrumb-item active">Match the Pair</li>
+  </ol>
+</nav>
+
+<div class="game-wrap">
+
+  <!-- Header -->
+  <div class="game-hdr">
+    <div style="font-size:2rem;line-height:1;">🃏</div>
+    <div>
+      <h1>Match the Pair — مطابقة الكلمات</h1>
+      <p>Flip cards to match each Arabic word with its picture</p>
+    </div>
+    <div class="stat-pills">
+      <div class="stat-pill" id="matchPill">✅ 0</div>
+      <div class="stat-pill" id="movePill">🔄 0</div>
+      <div class="stat-pill" id="timerPill">⏱ 0s</div>
+    </div>
+  </div>
+
+  <!-- Level selector + restart -->
+  <div class="toolbar-row">
+    <button class="level-btn active" id="btnEasy"   onclick="setLevel('easy')">🟢 Easy (8 pairs)</button>
+    <button class="level-btn"        id="btnMedium" onclick="setLevel('medium')">🔵 Medium (12 pairs)</button>
+    <button class="level-btn"        id="btnHard"   onclick="setLevel('hard')">🟣 Hard (16 pairs)</button>
+    <button class="btn-restart"      onclick="restart()">↺ Restart</button>
+  </div>
+
+  <!-- Timer bar -->
+  <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+
+  <!-- Card grid -->
+  <div class="card-grid easy" id="cardGrid"></div>
+
+  <!-- Results -->
+  <div class="result-panel" id="resultPanel">
+    <div class="result-emoji" id="resultEmoji">🏆</div>
+    <div class="star-row"     id="starRow"></div>
+    <div class="result-title" id="resultTitle"></div>
+    <div class="result-stat"  id="resultStat"></div>
+    <button class="btn-play-again" onclick="restart()">Play again →</button>
+  </div>
+
+</div><!-- /game-wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  WORD BANK  (Arabic word + emoji + English)
+// ═══════════════════════════════════════════════════════════
+const ALL_PAIRS = {{ pairs_json|safe }};
+
+const LEVEL_COUNTS = { easy: 8, medium: 12, hard: 16 };
+const TIMER_MAX    = { easy: 90, medium: 120, hard: 180 };
+
+// ── State ──────────────────────────────────────────────────
+let currentLevel   = 'easy';
+let cards          = [];       // rendered card objects
+let flipped        = [];       // indices of face-up unmatched cards
+let matched        = new Set();
+let moves          = 0;
+let startTime      = null;
+let timerInterval  = null;
+let timerMax       = 90;
+let locked         = false;    // block clicks during mismatch delay
+
+// ── Init ───────────────────────────────────────────────────
+function setLevel(level) {
+  currentLevel = level;
+  ['easy','medium','hard'].forEach(l => {
+    document.getElementById('btn' + l.charAt(0).toUpperCase() + l.slice(1))
+      .classList.toggle('active', l === level);
+  });
+  restart();
+}
+
+function restart() {
+  if (!ALL_PAIRS.length) {{
+    const ga = document.getElementById('game-area') || document.getElementById('board') || document.querySelector('.game-container');
+    if (ga) ga.innerHTML = '<div class="alert alert-info text-center mt-5"><i class=\"bi bi-info-circle me-2\"></i>No content yet — ask your teacher to add some!</div>';
+    return;
+  }}
+  stopTimer();
+  flipped = []; matched = new Set(); moves = 0; locked = false; startTime = null;
+
+  updatePills();
+  document.getElementById('resultPanel').classList.remove('show');
+  document.getElementById('cardGrid').classList.remove('easy','medium','hard');
+  document.getElementById('cardGrid').classList.add(currentLevel);
+
+  timerMax = TIMER_MAX[currentLevel];
+  setTimerBar(1);
+
+  const pairCount = LEVEL_COUNTS[currentLevel];
+  const chosen    = shuffle([...ALL_PAIRS]).slice(0, pairCount);
+
+  // Build card list: one emoji card + one word card per pair
+  const cardList = [];
+  chosen.forEach((pair, i) => {
+    cardList.push({ id: i, type: 'emoji', pair });
+    cardList.push({ id: i, type: 'word',  pair });
+  });
+  shuffle(cardList);
+  cards = cardList;
+  renderGrid();
+}
+
+// ── Render ─────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('cardGrid');
+  grid.innerHTML = '';
+  cards.forEach((card, idx) => {
+    const fc = document.createElement('div');
+    fc.className = 'flip-card';
+    fc.dataset.idx = idx;
+    fc.innerHTML = `
+      <div class="flip-inner">
+        <div class="card-back">
+          <span class="card-back-star">★</span>
+        </div>
+        <div class="card-front">
+          ${card.type === 'emoji'
+            ? `<span class="card-type">picture</span>
+               <span class="card-emoji">${card.pair.emoji}</span>`
+            : `<span class="card-type">word</span>
+               <span class="card-ar">${card.pair.ar}</span>
+               <span class="card-en">${card.pair.en}</span>`
+          }
+        </div>
+      </div>`;
+    fc.addEventListener('click', () => onCardClick(idx));
+    grid.appendChild(fc);
+  });
+}
+
+// ── Click ───────────────────────────────────────────────────
+function onCardClick(idx) {
+  if (locked) return;
+  if (matched.has(cards[idx].id) && getEl(idx).classList.contains('matched')) return;
+  if (flipped.includes(idx)) return;
+  if (flipped.length >= 2) return;
+
+  // Start timer on first flip
+  if (!startTime) startTimer();
+
+  flip(idx, true);
+  flipped.push(idx);
+
+  if (flipped.length === 2) {
+    moves++;
+    updatePills();
+    checkMatch();
+  }
+}
+
+function checkMatch() {
+  const [a, b] = flipped;
+  const cA = cards[a], cB = cards[b];
+
+  if (cA.id === cB.id && cA.type !== cB.type) {
+    // ✅ Match
+    matched.add(cA.id);
+    setTimeout(() => {
+      getEl(a).classList.add('matched');
+      getEl(b).classList.add('matched');
+      flipped = [];
+      updatePills();
+      if (matched.size === LEVEL_COUNTS[currentLevel]) {
+        stopTimer();
+        setTimeout(showResult, 500);
+      }
+    }, 350);
+  } else {
+    // ❌ No match
+    locked = true;
+    getEl(a).classList.add('wrong-flash');
+    getEl(b).classList.add('wrong-flash');
+    setTimeout(() => {
+      flip(a, false); flip(b, false);
+      getEl(a).classList.remove('wrong-flash');
+      getEl(b).classList.remove('wrong-flash');
+      flipped = [];
+      locked = false;
+    }, 900);
+  }
+}
+
+function flip(idx, faceUp) {
+  getEl(idx).classList.toggle('flipped', faceUp);
+}
+function getEl(idx) {
+  return document.querySelector(`.flip-card[data-idx="${idx}"]`);
+}
+
+// ── Pills ───────────────────────────────────────────────────
+function updatePills() {
+  document.getElementById('matchPill').textContent = `✅ ${matched.size}`;
+  document.getElementById('movePill').textContent  = `🔄 ${moves}`;
+}
+
+// ── Timer ───────────────────────────────────────────────────
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(tickTimer, 1000);
+}
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+function tickTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  document.getElementById('timerPill').textContent = `⏱ ${elapsed}s`;
+  const ratio = Math.max(0, 1 - elapsed / timerMax);
+  setTimerBar(ratio);
+  const fill = document.getElementById('timerFill');
+  fill.classList.toggle('warn',   ratio < .4 && ratio >= .2);
+  fill.classList.toggle('danger', ratio < .2);
+}
+function setTimerBar(ratio) {
+  document.getElementById('timerFill').style.width = (ratio * 100) + '%';
+}
+
+// ── Results ─────────────────────────────────────────────────
+function showResult() {
+  const elapsed = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+  const pairCount = LEVEL_COUNTS[currentLevel];
+
+  // Star rating based on moves (perfect = pairCount moves)
+  const ratio = pairCount / moves;
+  const stars  = ratio >= .9 ? 3 : ratio >= .65 ? 2 : 1;
+  const starStr = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+  const msgs = [
+    ['🎉', 'Perfect memory!'],
+    ['🏆', 'Excellent work!'],
+    ['🌟', 'Well done!'],
+  ];
+  const [emoji, title] = msgs[3 - stars];
+
+  document.getElementById('resultEmoji').textContent = emoji;
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('starRow').textContent     = starStr;
+  document.getElementById('resultStat').textContent  =
+    `${pairCount} pairs matched in ${moves} moves · ${elapsed} seconds`;
+  document.getElementById('resultPanel').classList.add('show');
+  document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ── Start ────────────────────────────────────────────────────
+restart();
+</script>
+{% endblock %}

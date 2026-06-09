@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Result — {{ submission.quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+
+    <h1 class="h3 mb-1">{{ submission.quiz.title }}</h1>
+    <p class="text-muted">
+      Submitted
+      {% if submission.submitted_at %}
+        {{ submission.submitted_at|date:"M j, Y · H:i" }}
+      {% else %}
+        — not yet submitted
+      {% endif %}
+    </p>
+
+    {% comment %}
+      Score block. Three variants by quiz kind:
+        - Placement: show the assigned level (no pass/fail framing)
+        - Lesson quiz / course final (graded): pass/fail badge + score
+        - Submitted but ungraded: "awaiting teacher grading"
+    {% endcomment %}
+    {% if submission.status == 'graded' and submission.quiz.kind == 'placement' %}
+      <div class="card my-4">
+        <div class="card-body text-center py-4">
+          <p class="text-muted small mb-1">
+            You scored {{ submission.score }}%
+          </p>
+          {% if submission.student.current_level %}
+            <div class="display-4 fw-semibold"
+                 style="color: var(--baytalhikma-accent);">
+              Level {{ submission.student.current_level.code }}
+            </div>
+            <p class="lead text-muted mb-0">
+              {{ submission.student.current_level.name }}
+            </p>
+          {% else %}
+            <p class="text-muted">Level not yet assigned.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if recommended_courses %}
+        <h2 class="h5 mt-4 mb-3">
+          <i class="bi bi-stars me-1"></i>Recommended courses for you
+        </h2>
+        <div class="row g-3 mb-4">
+          {% for course in recommended_courses %}
+            <div class="col-md-6">
+              <a href="{% url 'curriculum:course_detail' course.slug %}"
+                 class="text-decoration-none text-reset">
+                <div class="card h-100 course-card">
+                  <div class="card-body">
+                    <div class="d-flex gap-1 flex-wrap mb-2">
+                      {% if course.level %}
+                        <span class="badge text-bg-primary">{{ course.level.code }}</span>
+                      {% else %}
+                        <span class="badge text-bg-success">Open</span>
+                      {% endif %}
+                      <span class="badge text-bg-light border">
+                        {{ course.category.name }}
+                      </span>
+                    </div>
+                    <h6 class="mb-1">{{ course.title }}</h6>
+                    <p class="small text-muted mb-0">
+                      {{ course.description|truncatewords:15 }}
+                    </p>
+                  </div>
+                </div>
+              </a>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+    {% elif submission.status == 'graded' %}
+      <div class="card my-4">
+        <div class="card-body text-center py-4">
+          <div class="display-4 fw-semibold">
+            {{ submission.score }}%
+          </div>
+          {% if submission.passed %}
+            <span class="badge text-bg-success fs-6">
+              <i class="bi bi-check-circle-fill me-1"></i>Passed
+            </span>
+          {% else %}
+            <span class="badge text-bg-danger fs-6">
+              <i class="bi bi-x-circle-fill me-1"></i>Did not pass
+            </span>
+          {% endif %}
+          <p class="text-muted small mt-2 mb-0">
+            Pass threshold: {{ submission.quiz.pass_threshold }}%
+          </p>
+        </div>
+      </div>
+    {% elif submission.status == 'submitted' %}
+      <div class="alert alert-info">
+        <i class="bi bi-hourglass-split me-1"></i>
+        Your submission is awaiting grading.
+        <span class="text-muted small">
+          (Auto-grading lands in Phase 6C; short-answer questions will
+          stay in this state until your teacher grades them.)
+        </span>
+      </div>
+    {% else %}
+      <div class="alert alert-warning">
+        This attempt is still in progress.
+        <a href="{% url 'assessments:take_question' submission.id 1 %}">
+          Resume
+        </a>.
+      </div>
+    {% endif %}
+
+    {# ===== Answer review ===== #}
+    <h2 class="h5 mt-4 mb-3">Your answers</h2>
+
+    <ol class="list-group list-group-flush">
+      {% for a in answers %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="fw-semibold">
+              <span class="text-muted me-2">{{ a.question.order }}.</span>
+              {{ a.question.text }}
+            </div>
+            <div class="ms-2 text-nowrap">
+              {% if a.is_correct is True %}
+                <span class="badge text-bg-success">
+                  <i class="bi bi-check-lg"></i>
+                  {{ a.points_awarded }}/{{ a.question.points }} pt{{ a.question.points|pluralize }}
+                </span>
+              {% elif a.is_correct is False %}
+                <span class="badge text-bg-danger">
+                  <i class="bi bi-x-lg"></i>
+                  0/{{ a.question.points }} pt{{ a.question.points|pluralize }}
+                </span>
+              {% else %}
+                <span class="badge text-bg-secondary">
+                  <i class="bi bi-hourglass-split"></i>
+                  {% if a.points_awarded is not None %}
+                    {{ a.points_awarded }}/{{ a.question.points }}
+                  {% else %}
+                    Pending
+                  {% endif %}
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          {% if a.question.kind == 'short_answer' %}
+            <div class="bg-body-tertiary border rounded p-2 small">
+              {{ a.text_answer|default:"(no answer)"|linebreaksbr }}
+            </div>
+          {% else %}
+            <ul class="small mb-0 list-unstyled">
+              {% for c in a.question.choices.all %}
+                <li>
+                  {# Selected? #}
+                  {% if c in a.selected_choices.all %}
+                    {% if submission.status == 'graded' %}
+                      {% if c.is_correct %}
+                        <i class="bi bi-check-circle-fill me-1 text-success"></i>
+                      {% else %}
+                        <i class="bi bi-x-circle-fill me-1 text-danger"></i>
+                      {% endif %}
+                    {% else %}
+                      <i class="bi bi-record-circle me-1 text-primary"></i>
+                    {% endif %}
+                  {% else %}
+                    {# Not selected — show whether it WAS correct, in graded mode #}
+                    {% if submission.status == 'graded' and c.is_correct %}
+                      <i class="bi bi-circle-fill me-1 text-success-emphasis"
+                         title="Correct answer (you didn't pick this)"></i>
+                    {% else %}
+                      <i class="bi bi-circle me-1 text-muted"></i>
+                    {% endif %}
+                  {% endif %}
+                  {{ c.text }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+
+          {% if a.question.explanation and submission.status == 'graded' %}
+            <div class="mt-2 small text-muted">
+              <i class="bi bi-info-circle me-1"></i>
+              {{ a.question.explanation }}
+            </div>
+          {% endif %}
+        </li>
+      {% empty %}
+        <li class="list-group-item text-muted">
+          No answers were recorded.
+        </li>
+      {% endfor %}
+    </ol>
+
+    <div class="mt-4 d-flex flex-wrap gap-2">
+      {% if submission.status != 'in_progress' %}
+        <form method="post"
+              action="{% url 'assessments:start_quiz' submission.quiz.id %}"
+              class="m-0">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-arrow-repeat me-1"></i>Take again
+          </button>
+        </form>
+      {% endif %}
+      <a href="{% url 'assessments:quiz_intro' submission.quiz.id %}"
+         class="btn btn-outline-secondary">
+        Back to quiz
+      </a>
+      <a href="{% url 'dashboard' %}"
+         class="btn btn-outline-secondary">
+        Dashboard
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

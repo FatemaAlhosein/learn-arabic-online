@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:question_list' %}">Game Questions</a></li>
+    <li class="breadcrumb-item active">{{ title }}</li>
+  </ol>
+</nav>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div class="bh-feature-icon"><i class="bi bi-chat-quote"></i></div>
+  <h1 class="h3 mb-0">{{ title }}</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <form method="post" novalidate>
+      {% csrf_token %}
+
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-joystick me-1"></i>Question details</div>
+        <div class="card-body">
+
+          <div class="mb-3">
+            <label class="form-label">Game type <span class="text-danger">*</span></label>
+            {{ form.game_type }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Arabic sentence <span class="text-danger">*</span></label>
+            {{ form.arabic_sentence }}
+            {% if form.arabic_sentence.errors %}
+              <div class="text-danger small mt-1">{{ form.arabic_sentence.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">English sentence</label>
+            {{ form.english_sentence }}
+            <div class="form-text">Shown as a hint to the student.</div>
+          </div>
+
+        </div>
+      </div>
+
+      {# ── Sentence Builder fields ── #}
+      <div class="card mb-4" id="sb-card">
+        <div class="card-header"><i class="bi bi-grid me-1"></i>Sentence Builder</div>
+        <div class="card-body">
+          <label class="form-label">{{ form.word_tokens_input.label }}</label>
+          {{ form.word_tokens_input }}
+          <div class="form-text">{{ form.word_tokens_input.help_text }}</div>
+        </div>
+      </div>
+
+      {# ── True-or-False fields ── #}
+      <div class="card mb-4" id="tof-card">
+        <div class="card-header"><i class="bi bi-check2-circle me-1"></i>True or False</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Emoji clue</label>
+              {{ form.emoji }}
+            </div>
+            <div class="col-md-8">
+              <label class="form-label">Correct answer</label>
+              {{ form.is_true }}
+              <div class="form-text">Select True or False — this is the answer students must choose.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Curriculum ── #}
+      <div class="card mb-4">
+        <div class="card-header"><i class="bi bi-mortarboard me-1"></i>Curriculum link</div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Level</label>
+              {{ form.level }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Course (optional)</label>
+              {{ form.course }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-body">
+          <div class="form-check">
+            {{ form.is_active }}
+            <label class="form-check-label fw-semibold" for="{{ form.is_active.id_for_label }}">
+              Active (visible in games)
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <div class="d-flex gap-2 flex-wrap">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-check-lg me-1"></i>Save question
+        </button>
+        {% if not question %}
+          <button type="submit" name="add_another" class="btn btn-outline-primary">
+            <i class="bi bi-plus-circle me-1"></i>Save & add another
+          </button>
+        {% endif %}
+        <a href="{% url 'games:question_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Show/hide the relevant card based on game type selection
+  const typeSelect = document.getElementById('id_game_type');
+  const sbCard  = document.getElementById('sb-card');
+  const tofCard = document.getElementById('tof-card');
+
+  function toggleCards() {
+    const v = typeSelect.value;
+    sbCard.style.display  = (v === 'sentence_builder') ? '' : 'none';
+    tofCard.style.display = (v === 'true_or_false')    ? '' : 'none';
+  }
+
+  typeSelect.addEventListener('change', toggleCards);
+  toggleCards(); // run on page load
+</script>
+{% endblock %}

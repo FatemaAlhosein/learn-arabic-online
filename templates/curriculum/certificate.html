@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Certificate — {{ course.title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Certificate shell ─────────────────────────────── */
+  .cert-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1rem 3rem;
+  }
+
+  .cert-frame {
+    position: relative;
+    background: #fffdf7;
+    border: 2px solid var(--bh-gold-300);
+    border-radius: var(--radius-lg);
+    padding: 3rem 3.5rem;
+    box-shadow: 0 0 0 8px var(--bh-gold-50),
+                0 0 0 9px var(--bh-gold-200),
+                var(--shadow-lg);
+    color: #1a1a1a;
+    overflow: hidden;
+  }
+
+  /* corner ornaments */
+  .cert-frame::before,
+  .cert-frame::after {
+    content: "❧";
+    position: absolute;
+    font-size: 2rem;
+    color: var(--bh-gold-300);
+    line-height: 1;
+  }
+  .cert-frame::before { top: 1rem; left: 1.25rem; }
+  .cert-frame::after  { bottom: 1rem; right: 1.25rem; transform: rotate(180deg); }
+
+  /* ── Arabic header ─────────────────────────────────── */
+  .cert-arabic-header {
+    font-size: 2rem;
+    color: var(--bh-green-600);
+    letter-spacing: .04em;
+    font-weight: 700;
+    direction: rtl;
+  }
+
+  .cert-site-name {
+    font-size: .85rem;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--bh-green-500);
+  }
+
+  /* ── Title band ────────────────────────────────────── */
+  .cert-title {
+    font-size: 2.4rem;
+    font-family: "Georgia", "Times New Roman", serif;
+    letter-spacing: .04em;
+    color: var(--bh-green-700);
+    margin: 1.25rem 0 .5rem;
+  }
+
+  /* ── Student name ──────────────────────────────────── */
+  .cert-name-wrapper {
+    padding: .6rem 2rem;
+    background: linear-gradient(135deg, var(--bh-green-25), var(--bh-gold-50));
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--bh-green-400);
+    margin: 1.5rem 0;
+    display: inline-block;
+  }
+  .cert-name {
+    font-size: 2rem;
+    font-family: "Georgia", "Times New Roman", serif;
+    color: var(--bh-green-800);
+  }
+
+  /* ── Course title ──────────────────────────────────── */
+  .cert-course {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: .25rem 0;
+  }
+
+  /* ── Gold divider ──────────────────────────────────── */
+  .cert-divider {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--bh-gold-300), var(--bh-gold-400), var(--bh-gold-300), transparent);
+    border: none;
+    margin: 1.75rem 0;
+  }
+
+  /* ── Badge strip ───────────────────────────────────── */
+  .cert-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    background: var(--bh-green-600);
+    color: #fff;
+    border-radius: 999px;
+    padding: .25rem .9rem;
+    font-size: .8rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+  }
+
+  /* ── Seal ──────────────────────────────────────────── */
+  .cert-seal {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: conic-gradient(var(--bh-green-500), var(--bh-gold-400), var(--bh-green-500));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-align: center;
+    text-transform: uppercase;
+    box-shadow: 0 0 0 4px #fffdf7, 0 0 0 6px var(--bh-green-300);
+  }
+
+  /* ── Footer meta ───────────────────────────────────── */
+  .cert-meta {
+    font-size: .78rem;
+    color: #666;
+  }
+  .cert-code {
+    font-family: "SFMono-Regular", "Consolas", monospace;
+    font-size: .7rem;
+    color: #999;
+    letter-spacing: .08em;
+  }
+
+  /* ── Print ─────────────────────────────────────────── */
+  @media print {
+    nav, footer, .alert, .no-print { display: none !important; }
+    .cert-frame {
+      box-shadow: none;
+      border-color: #aaa;
+    }
+    body { background: #fff !important; }
+    .cert-page { padding: 0; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cert-page">
+
+  {# Actions bar — hidden on print #}
+  <div class="d-flex justify-content-end gap-2 mb-3 no-print">
+    <button onclick="window.print();" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-printer me-1"></i>Print / Save PDF
+    </button>
+    {% if user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-house me-1"></i>Dashboard
+      </a>
+    {% endif %}
+  </div>
+
+  <div class="cert-frame text-center">
+
+    {# Header #}
+    <p class="cert-arabic-header mb-0" lang="ar">بَيْتُ الحِكْمَة</p>
+    <p class="cert-site-name mt-1 mb-3">Bayt al-Hikma — House of Wisdom</p>
+
+    <hr class="cert-divider">
+
+    {# Body #}
+    <p class="text-muted mb-0" style="font-size:.95rem;">This certificate is proudly awarded to</p>
+
+    <div class="cert-name-wrapper">
+      <div class="cert-name">
+        {% if student.user.first_name %}
+          {{ student.user.first_name }}{% if student.user.last_name %} {{ student.user.last_name }}{% endif %}
+        {% else %}
+          {{ student.user.email }}
+        {% endif %}
+      </div>
+    </div>
+
+    <p class="text-muted mb-2" style="font-size:.95rem;">for the successful completion of</p>
+    <div class="cert-course">{{ course.title }}</div>
+
+    {% if course.level %}
+      <p class="mt-2 mb-0">
+        <span class="cert-badge">
+          <i class="bi bi-layers"></i>{{ course.level.code }} — {{ course.level.name }}
+        </span>
+      </p>
+    {% endif %}
+
+    <hr class="cert-divider">
+
+    {# Seal + signatures row #}
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-4">
+
+      {# Instructor signature #}
+      <div class="text-center flex-fill">
+        <div style="border-top: 1.5px solid #ccc; padding-top:.5rem; min-width:160px; margin:0 auto;">
+          <div class="fw-semibold" style="font-family:Georgia,serif;">
+            {{ course.teacher.first_name|default:course.teacher.email }}
+          </div>
+          <div class="cert-meta">Course Instructor</div>
+        </div>
+      </div>
+
+      {# Seal #}
+      <div class="cert-seal flex-shrink-0">
+        <i class="bi bi-award-fill" style="font-size:1.4rem;"></i>
+        <span style="font-size:.55rem; margin-top:2px;">Verified</span>
+      </div>
+
+      {# Issue date #}
+      <div class="text-center flex-fill">
+        <div style="border-top: 1.5px solid #ccc; padding-top:.5rem; min-width:160px; margin:0 auto;">
+          <div class="fw-semibold" style="font-family:Georgia,serif;">
+            {{ enrollment.completed_at|date:"F j, Y" }}
+          </div>
+          <div class="cert-meta">Date of Completion</div>
+        </div>
+      </div>
+
+    </div>
+
+    {# Verification code #}
+    <p class="cert-code mt-4 mb-0">
+      Certificate ID: {{ enrollment.certificate_code }}
+    </p>
+
+  </div>
+
+</div>
+{% endblock %}

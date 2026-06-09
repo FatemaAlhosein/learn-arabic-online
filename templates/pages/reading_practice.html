@@ -1,0 +1,1872 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تدريب القراءة العربية — Arabic Reading Practice</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Sans+Arabic:wght@400;600;700&family=Scheherazade+New:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    /* ─── CSS variables ─────────────────────────────────── */
+    :root {
+      --green:  #1a5c3a;
+      --blue:   #1a4d8c;
+      --purple: #6b2d6b;
+      --gold:   #c89b3c;
+      --cream:  #fdf8ee;
+      --paper:  #fffdf7;
+      --ink:    #1a1a1a;
+      --muted:  #6b7280;
+      --border: #e5e0d5;
+      --line:   #d1c9b8;
+      --bg:     #f0ebe0;
+    }
+    body.bw-mode {
+      --green:  #000; --blue: #000; --purple: #000;
+      --gold:   #555; --cream: #fff; --paper: #fff;
+      --ink:    #000; --muted: #555; --border: #999;
+      --line:   #999; --bg: #fff;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans Arabic', 'Amiri', serif;
+      background: var(--bg); color: var(--ink);
+      line-height: 1.7; padding: 2rem 1rem 6rem;
+      transition: background .2s, color .2s;
+    }
+
+    /* ─── Floating toolbar ──────────────────────────────── */
+    .toolbar {
+      position: fixed; bottom: 1.5rem; left: 50%;
+      transform: translateX(-50%);
+      display: flex; gap: .6rem;
+      background: #1a1a1a; border-radius: 2rem;
+      padding: .55rem .75rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,.35);
+      z-index: 9999; direction: ltr;
+    }
+    .toolbar button {
+      border: none; border-radius: 1.5rem;
+      padding: .45rem 1.1rem; font-size: .82rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; gap: .35rem;
+      transition: all .15s; font-family: system-ui, sans-serif; letter-spacing: .01em;
+    }
+    .btn-color { background: linear-gradient(135deg,#1a5c3a,#2a7a52); color: #f5d98b; }
+    .btn-color:hover { background: linear-gradient(135deg,#134830,#1a5c3a); }
+    .btn-bw    { background: white; color: #111; }
+    .btn-bw:hover { background: #e5e5e5; }
+    .btn-download { background: #2d6db5; color: #fff; }
+    .btn-download:hover { background: #205299; }
+    @media print { .toolbar { display: none !important; } .level-tabs { display: none !important; } }
+
+    /* ─── Print-tip overlay ─────────────────────────────── */
+    .print-tip-overlay {
+      display: none; position: fixed; inset: 0; z-index: 99999;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .print-tip-overlay.show { display: flex; }
+    .print-tip-box {
+      background: #fff; border-radius: 1rem;
+      padding: 2rem 2.25rem; max-width: 420px; width: 90%;
+      box-shadow: 0 2rem 4rem rgba(0,0,0,.3);
+      direction: ltr; text-align: left;
+    }
+    .print-tip-box h3 { font-size: 1.05rem; margin-bottom: .85rem; color: #111; }
+    .print-tip-step {
+      display: flex; gap: .65rem; align-items: flex-start;
+      margin-bottom: .65rem; font-size: .88rem; color: #333;
+    }
+    .step-num {
+      background: #1a5c3a; color: #fff; border-radius: 50%;
+      width: 1.5rem; height: 1.5rem;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .72rem; font-weight: 700; flex-shrink: 0; margin-top: .05rem;
+    }
+    .tip-actions { display: flex; gap: .5rem; margin-top: 1.25rem; }
+    .tip-btn-go {
+      flex: 1; border: none; border-radius: .5rem;
+      background: #1a5c3a; color: #fff;
+      padding: .55rem 1rem; font-weight: 700; cursor: pointer; font-size: .88rem;
+    }
+    .tip-btn-skip {
+      border: 1px solid #ccc; border-radius: .5rem;
+      background: #fff; color: #555;
+      padding: .55rem 1rem; cursor: pointer; font-size: .88rem;
+    }
+
+    /* ─── Level tab bar ─────────────────────────────────── */
+    .level-tabs {
+      max-width: 760px; margin: 0 auto 2rem;
+      display: flex; gap: .5rem; flex-wrap: wrap;
+      direction: ltr;
+    }
+    .level-tab {
+      border: none; border-radius: 2rem;
+      padding: .5rem 1.3rem; font-size: .85rem; font-weight: 700;
+      cursor: pointer; transition: all .2s;
+      font-family: system-ui, sans-serif; letter-spacing: .02em;
+    }
+    /* ─── Site nav bar (top, hidden on print) ──────────── */
+    .site-nav-bar {
+      direction: ltr; background: #0f2019; color: #d8e8dd;
+      padding: .65rem 1.25rem; display: flex; align-items: center;
+      gap: 1rem; font-family: system-ui, sans-serif; font-size: .85rem;
+      position: sticky; top: 0; z-index: 100;
+      border-bottom: 1px solid #1e3328;
+    }
+    .site-nav-bar a {
+      color: #7bbea3; text-decoration: none; font-weight: 600;
+      display: flex; align-items: center; gap: .35rem;
+    }
+    .site-nav-bar a:hover { color: #f5d98b; }
+    .site-nav-sep { color: rgba(255,255,255,.2); }
+    .site-nav-title { color: rgba(255,255,255,.55); }
+    @media print { .site-nav-bar { display: none !important; } }
+
+    .level-tab.all   { background: #444; color: #fff; }
+    .level-tab.a1    { background: #e8f5ee; color: #1a5c3a; border: 2px solid #1a5c3a; }
+    .level-tab.a2    { background: #e8eef8; color: #1a4d8c; border: 2px solid #1a4d8c; }
+    .level-tab.b1    { background: #f3e8f3; color: #6b2d6b; border: 2px solid #6b2d6b; }
+    .level-tab.b2    { background: #fff8e6; color: #8a5a00; border: 2px solid #c89b3c; }
+    .level-tab.active.all    { background: #1a1a1a; color: #fff; }
+    .level-tab.active.a1     { background: #1a5c3a; color: #f5d98b; border-color: #1a5c3a; }
+    .level-tab.active.a2     { background: #1a4d8c; color: #f5d98b; border-color: #1a4d8c; }
+    .level-tab.active.b1     { background: #6b2d6b; color: #f5d98b; border-color: #6b2d6b; }
+    .level-tab.active.b2     { background: #c89b3c; color: #1a1100; border-color: #c89b3c; }
+    .section-card[data-level="b2"] .section-header { background: #7a5200; }
+    body:not(.bw-mode) .section-card[data-level="b2"] .section-header { background: #7a5200 !important; }
+
+    /* ─── Cover ─────────────────────────────────────────── */
+    .cover {
+      background: var(--green); color: white; border-radius: 1.5rem;
+      padding: 3rem 2.5rem; text-align: center;
+      max-width: 760px; margin: 0 auto 2rem;
+      position: relative; overflow: hidden;
+    }
+    body:not(.bw-mode) .cover::before {
+      content: ''; position: absolute; inset: 0;
+      background: radial-gradient(circle at 70% 20%,rgba(200,155,60,.3),transparent 60%),
+                  radial-gradient(circle at 20% 80%,rgba(200,155,60,.15),transparent 50%);
+    }
+    .cover-eyebrow { font-size:.8rem; letter-spacing:.15em; color:rgba(255,255,255,.65); text-transform:uppercase; position:relative; }
+    .cover-title-ar { font-family:'Scheherazade New',serif; font-size:2.8rem; font-weight:700; color:#f5d98b; margin:.4rem 0 .2rem; position:relative; }
+    body.bw-mode .cover-title-ar { color:#000; }
+    body.bw-mode .cover-title-en { color:#444; }
+    body.bw-mode .cover-eyebrow  { color:#555; }
+    body.bw-mode .cover-pill     { background:rgba(0,0,0,.07); border-color:#999; color:#000; }
+    .cover-title-en { font-size:1.1rem; color:rgba(255,255,255,.8); font-family:Georgia,serif; font-style:italic; margin-bottom:1.2rem; position:relative; }
+    .cover-pills { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; position:relative; }
+    .cover-pill { background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25); border-radius:2rem; padding:.3rem .85rem; font-size:.78rem; color:rgba(255,255,255,.9); }
+
+    /* ─── Section cards ─────────────────────────────────── */
+    .section-card {
+      background: var(--paper); border-radius: 1.25rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px rgba(26,92,58,.07);
+      max-width: 760px; margin: 0 auto 3rem; overflow: hidden;
+    }
+    body.bw-mode .section-card { box-shadow: none; border: 1.5px solid #000; }
+    .section-card[data-level="a1"] .section-header { background: var(--green); }
+    .section-card[data-level="a2"] .section-header { background: var(--blue); }
+    .section-card[data-level="b1"] .section-header { background: var(--purple); }
+    body.bw-mode .section-card .section-header { background: #fff !important; border-bottom: 2px solid #000; }
+
+    .section-header {
+      padding: 1.1rem 1.75rem; display: flex; align-items: center; gap: 1rem;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    .section-num {
+      background: var(--gold); color: #1a1100;
+      font-weight: 700; font-size: 1rem; border-radius: 50%;
+      width: 2.2rem; height: 2.2rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    body.bw-mode .section-num { background: #fff; color: #000; border: 2px solid #000; }
+    .section-title-ar { font-family:'Scheherazade New',serif; font-size:1.5rem; font-weight:700; color:#f5d98b; }
+    body.bw-mode .section-title-ar { color: #000; }
+    .section-title-en { font-size:.8rem; color:rgba(255,255,255,.65); font-family:Georgia,serif; font-style:italic; }
+    body.bw-mode .section-title-en { color: #555; }
+
+    /* Level badge on header */
+    .level-badge {
+      margin-right: auto; margin-left: 0;
+      font-size: .7rem; font-weight: 700; letter-spacing: .08em;
+      background: rgba(255,255,255,.2); color: rgba(255,255,255,.9);
+      border: 1px solid rgba(255,255,255,.3);
+      border-radius: 1rem; padding: .2rem .65rem;
+      font-family: system-ui, sans-serif; direction: ltr;
+    }
+    body.bw-mode .level-badge { background: #eee; color: #000; border-color: #999; }
+
+    .section-body { padding: 1.75rem; }
+
+    /* ─── Passage ────────────────────────────────────────── */
+    .block-label {
+      font-size:.7rem; font-weight:700; text-transform:uppercase;
+      letter-spacing:.13em; color:var(--green);
+      margin-bottom:.45rem; display:flex; align-items:center; gap:.4rem;
+    }
+    .section-card[data-level="a2"] .block-label { color: var(--blue); }
+    .section-card[data-level="b1"] .block-label { color: var(--purple); }
+    .block-label::after { content:''; flex:1; height:1px; background:var(--border); }
+    body.bw-mode .block-label { color: #000; }
+    body.bw-mode .block-label::after { background: #999; }
+
+    .passage-box {
+      background: var(--cream); border: 1px solid var(--border);
+      border-right: 4px solid var(--gold); border-radius: .75rem;
+      padding: 1.3rem 1.5rem; margin-bottom: 1.5rem;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact;
+    }
+    body.bw-mode .passage-box { background:#fff; border:1px solid #999; border-right:3px solid #000; }
+    .passage-ar { font-family:'Scheherazade New',serif; font-size:1.5rem; line-height:2.1; direction:rtl; text-align:right; }
+    .passage-en { font-family:Georgia,serif; font-style:italic; font-size:.88rem; color:var(--muted); direction:ltr; text-align:left; border-top:1px dashed var(--border); margin-top:.85rem; padding-top:.75rem; line-height:1.6; }
+    body.bw-mode .passage-en { color:#444; border-top-color:#aaa; }
+
+    /* ─── Questions ─────────────────────────────────────── */
+    .q-grid { display:grid; gap:.6rem; margin-bottom:1.75rem; }
+    .q-item { background:white; border:1px solid var(--border); border-radius:.6rem; padding:.85rem 1.1rem; }
+    body.bw-mode .q-item { border-color:#999; }
+    .q-ar { font-family:'Scheherazade New',serif; font-size:1.2rem; color:var(--green); font-weight:700; direction:rtl; text-align:right; }
+    .section-card[data-level="a2"] .q-ar { color: var(--blue); }
+    .section-card[data-level="b1"] .q-ar { color: var(--purple); }
+    body.bw-mode .q-ar { color: #000; }
+    .q-en { font-size:.78rem; color:var(--muted); direction:ltr; text-align:left; font-family:Georgia,serif; font-style:italic; margin-top:.2rem; }
+    .ans-line { border:none; border-bottom:1.5px solid var(--line); display:block; width:100%; margin-top:.45rem; height:1.7rem; }
+    body.bw-mode .ans-line { border-bottom-color:#000; }
+
+    /* ─── Writing practice ──────────────────────────────── */
+    .writing-hdr {
+      background: linear-gradient(135deg,var(--gold),#e0b830); color:#1a1100;
+      border-radius:.6rem; padding:.65rem 1.1rem; font-weight:700; font-size:.82rem;
+      margin-bottom:1.1rem; display:flex; align-items:center; gap:.4rem;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact;
+    }
+    body.bw-mode .writing-hdr { background:#fff; color:#000; border:1.5px solid #000; }
+    .w-sentence { margin-bottom:1.25rem; }
+    .model-text { font-family:'Scheherazade New',serif; font-size:1.3rem; color:var(--green); direction:rtl; text-align:right; font-weight:700; margin-bottom:.35rem; }
+    .section-card[data-level="a2"] .model-text { color: var(--blue); }
+    .section-card[data-level="b1"] .model-text { color: var(--purple); }
+    body.bw-mode .model-text { color:#000; }
+    .trace-line { border:none; border-bottom:1.5px dashed var(--line); display:block; width:100%; height:2rem; margin-bottom:.25rem; }
+    body.bw-mode .trace-line { border-bottom-color:#999; }
+
+    /* ─── TOC ────────────────────────────────────────────── */
+    .toc { max-width:760px; margin:0 auto 2.5rem; background:var(--paper); border:1px solid var(--border); border-radius:1rem; padding:1.5rem 2rem; }
+    .toc-title { font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:var(--green); margin-bottom:.8rem; }
+    .toc-level-group { margin-bottom:1rem; }
+    .toc-level-hdr { font-size:.7rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:.2rem .7rem; border-radius:1rem; display:inline-block; margin-bottom:.4rem; direction:ltr; font-family:system-ui,sans-serif; }
+    .toc-level-hdr.a1 { background:#e8f5ee; color:#1a5c3a; }
+    .toc-level-hdr.a2 { background:#e8eef8; color:#1a4d8c; }
+    .toc-level-hdr.b1 { background:#f3e8f3; color:#6b2d6b; }
+    body.bw-mode .toc-level-hdr { background:#eee; color:#000; }
+    .toc-grid { display:grid; grid-template-columns:1fr 1fr; gap:.4rem .75rem; }
+    .toc-item { font-size:.9rem; color:var(--ink); display:flex; align-items:center; gap:.4rem; }
+    .toc-num { color:var(--gold); font-weight:700; font-size:.8rem; width:1.4rem; flex-shrink:0; }
+    body.bw-mode .toc-num { color:#000; }
+
+    /* ─── Print media ────────────────────────────────────── */
+    @page { size: A4 portrait; margin: 1.2cm 1.5cm; }
+
+    @media print {
+      /* ── Reset screen chrome ── */
+      body {
+        background: white !important;
+        padding: 0;
+        font-size: 12.5px;   /* scale down all rem units uniformly */
+      }
+      .toolbar, .level-tabs, .screen-footer, .print-tip-overlay { display: none !important; }
+
+      /* ── Each major block = its own page ── */
+      .cover {
+        border-radius: 0; margin: 0;
+        page-break-after: always; break-after: page;
+        /* fill the page height */
+        min-height: calc(297mm - 2.4cm);
+        display: flex; flex-direction: column;
+        justify-content: center;
+      }
+      .toc {
+        border-radius: 0; margin: 0;
+        page-break-after: always; break-after: page;
+      }
+      .section-card {
+        box-shadow: none; border-radius: 0;
+        margin: 0; border: none;
+        page-break-before: always; break-before: page;
+        page-break-inside: avoid; break-inside: avoid;
+        display: block !important;
+        max-width: 100%;
+      }
+
+      /* ── Never slice these mid-element ── */
+      .q-item, .w-sentence, .passage-box, .writing-hdr {
+        page-break-inside: avoid; break-inside: avoid;
+      }
+
+      /* ── Compress vertical spacing ── */
+      .section-header  { padding: .75rem 1.2rem; }
+      .section-body    { padding: 1rem 1.2rem; }
+      .passage-box     { padding: .85rem 1rem; margin-bottom: .9rem; }
+      .passage-ar      { font-size: 1.25rem; line-height: 1.9; }
+      .q-grid          { gap: .35rem; margin-bottom: 1rem; }
+      .q-item          { padding: .45rem .75rem; }
+      .q-ar            { font-size: 1.05rem; }
+      .ans-line        { height: 1.3rem; margin-top: .25rem; }
+      .block-label     { margin-bottom: .3rem; }
+      .writing-hdr     { padding: .45rem .9rem; margin-bottom: .7rem; }
+      .w-sentence      { margin-bottom: .8rem; }
+      .model-text      { font-size: 1.15rem; margin-bottom: .2rem; }
+      .trace-line      { height: 1.6rem; margin-bottom: .15rem; }
+
+      /* hide the second trace line per sentence — one copy line is enough */
+      .trace-line + .trace-line { display: none !important; }
+
+      /* hide English sub-translations to save space */
+      .passage-en { display: none !important; }
+      .q-en       { display: none !important; }
+      .section-title-en { display: none !important; }
+
+      /* ── Colour accuracy ── */
+      .section-header, .passage-box, .section-num, .writing-hdr, .cover {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      body:not(.bw-mode) .section-card[data-level="a1"] .section-header { background: #1a5c3a !important; }
+      body:not(.bw-mode) .section-card[data-level="a2"] .section-header { background: #1a4d8c !important; }
+      body:not(.bw-mode) .section-card[data-level="b1"] .section-header { background: #6b2d6b !important; }
+      body:not(.bw-mode) .cover { background: #1a5c3a !important; }
+      body.bw-mode .section-header { background: #fff !important; border-bottom: 2px solid #000; }
+      body.bw-mode .cover          { background: #fff !important; color: #000; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── Site nav bar ──────────────────────────────────────────────── -->
+<div class="site-nav-bar">
+  <a href="{% url 'dashboard' %}">
+    <i class="bi bi-arrow-left-circle"></i> Back to Dashboard
+  </a>
+  <span class="site-nav-sep">|</span>
+  <span class="site-nav-title">
+    <i class="bi bi-book"></i> Arabic Reading Practice Worksheets
+  </span>
+  <span style="margin-right:auto;"></span>
+  <a href="{% url 'curriculum:course_list' %}" style="font-size:.8rem;">
+    <i class="bi bi-grid"></i> Courses
+  </a>
+</div>
+
+<!-- ─── Print-tip overlay ─────────────────────────────────────────── -->
+<div class="print-tip-overlay" id="printTip">
+  <div class="print-tip-box">
+    <h3>📄 Before you print — one quick step</h3>
+    <p style="font-size:.82rem;color:#666;margin-bottom:1rem;">
+      Your browser adds its own header and footer to every printed page.
+      Turn them off for clean worksheets:
+    </p>
+    <div class="print-tip-step"><div class="step-num">1</div><div>Click <strong>"Print"</strong> below — the browser print dialog will open.</div></div>
+    <div class="print-tip-step"><div class="step-num">2</div><div>Click <strong>"More settings"</strong> (Chrome) or <strong>"Page Setup"</strong> (Safari/Firefox).</div></div>
+    <div class="print-tip-step"><div class="step-num">3</div><div>Find <strong>"Headers and footers"</strong> → turn it <strong>OFF</strong>.</div></div>
+    <div class="print-tip-step"><div class="step-num">4</div><div>Click <strong>Print</strong> or <strong>Save as PDF</strong>. ✅</div></div>
+    <div class="tip-actions">
+      <button class="tip-btn-go" id="tipGo">Got it — open print dialog</button>
+      <button class="tip-btn-skip" onclick="closeTip()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Floating toolbar ──────────────────────────────────────────── -->
+<div class="toolbar" dir="ltr">
+  <button class="btn-color"    onclick="showTip('color')">🎨 Print Colour</button>
+  <button class="btn-bw"       onclick="showTip('bw')">🖤 Print B&amp;W</button>
+  <button class="btn-download" onclick="downloadFile()">⬇ Download</button>
+</div>
+
+<!-- ─── Cover ────────────────────────────────────────────────────── -->
+<div class="cover">
+  <p class="cover-eyebrow">Bayt al-Hikma · بيت الحكمة</p>
+  <h1 class="cover-title-ar">تَدْرِيبُ الْقِرَاءَةِ الْعَرَبِيَّة</h1>
+  <p class="cover-title-en">Arabic Reading Practice for Young Learners</p>
+  <div class="cover-pills">
+    <span class="cover-pill">📖 ٢٤ نصًّا — 24 passages</span>
+    <span class="cover-pill">❓ أسئلة فهم — comprehension questions</span>
+    <span class="cover-pill">✏️ تدريب كتابة — writing practice</span>
+    <span class="cover-pill">المستويات A1 · A2 · B1 · B2</span>
+  </div>
+</div>
+
+<!-- ─── Level tabs ─────────────────────────────────────────────────── -->
+<div class="level-tabs" id="levelTabs">
+  <button class="level-tab all active" data-level="all" onclick="filterLevel('all')">📚 All Levels (24)</button>
+  <button class="level-tab a1"         data-level="a1"  onclick="filterLevel('a1')">🟢 A1 — Beginner (10)</button>
+  <button class="level-tab a2"         data-level="a2"  onclick="filterLevel('a2')">🔵 A2 — Elementary (6)</button>
+  <button class="level-tab b1"         data-level="b1"  onclick="filterLevel('b1')">🟣 B1 — Intermediate (4)</button>
+  <button class="level-tab b2"         data-level="b2"  onclick="filterLevel('b2')">🟡 B2 — Upper Intermediate (4)</button>
+</div>
+
+<!-- ─── Table of contents ─────────────────────────────────────────── -->
+<div class="toc">
+  <p class="toc-title">📋 محتويات الكتاب — Contents</p>
+
+  <div class="toc-level-group">
+    <div class="toc-level-hdr a1">A1 — Beginner</div>
+    <div class="toc-grid">
+      <div class="toc-item"><span class="toc-num">١</span> الحيوانات — Animals</div>
+      <div class="toc-item"><span class="toc-num">٢</span> عائلتي — My Family</div>
+      <div class="toc-item"><span class="toc-num">٣</span> يومي في المدرسة — My School Day</div>
+      <div class="toc-item"><span class="toc-num">٤</span> الفواكه والطعام — Fruits &amp; Food</div>
+      <div class="toc-item"><span class="toc-num">٥</span> غرفتي — My Room</div>
+      <div class="toc-item"><span class="toc-num">٦</span> الطقس — The Weather</div>
+      <div class="toc-item"><span class="toc-num">٧</span> صباحي — My Morning</div>
+      <div class="toc-item"><span class="toc-num">٨</span> الرياضة — Sports</div>
+      <div class="toc-item"><span class="toc-num">٩</span> الملابس — Clothes</div>
+      <div class="toc-item"><span class="toc-num">١٠</span> المواصلات — Transport</div>
+    </div>
+  </div>
+
+  <div class="toc-level-group">
+    <div class="toc-level-hdr a2">A2 — Elementary</div>
+    <div class="toc-grid">
+      <div class="toc-item"><span class="toc-num">١١</span> في السوق — At the Market</div>
+      <div class="toc-item"><span class="toc-num">١٢</span> الفصول الأربعة — The Four Seasons</div>
+      <div class="toc-item"><span class="toc-num">١٣</span> هواياتي — My Hobbies</div>
+      <div class="toc-item"><span class="toc-num">١٤</span> في العطلة — On Holiday</div>
+      <div class="toc-item"><span class="toc-num">١٥</span> الصحة والجسم — Health &amp; Body</div>
+      <div class="toc-item"><span class="toc-num">١٦</span> أصدقائي في المدرسة — Friends at School</div>
+    </div>
+  </div>
+
+  <div class="toc-level-group">
+    <div class="toc-level-hdr b1">B1 — Intermediate</div>
+    <div class="toc-grid">
+      <div class="toc-item"><span class="toc-num">١٧</span> البيئة والطبيعة — Environment &amp; Nature</div>
+      <div class="toc-item"><span class="toc-num">١٨</span> التكنولوجيا في حياتنا — Technology in Our Lives</div>
+      <div class="toc-item"><span class="toc-num">١٩</span> السفر والسياحة — Travel &amp; Tourism</div>
+      <div class="toc-item"><span class="toc-num">٢٠</span> المهن والأعمال — Jobs &amp; Professions</div>
+    </div>
+  </div>
+
+  <div class="toc-level-group">
+    <div class="toc-level-hdr b2" style="background:#7a5200;">B2 — Upper Intermediate</div>
+    <div class="toc-grid">
+      <div class="toc-item"><span class="toc-num">٢١</span> الذكاء الاصطناعي في حياتنا — AI in Our Lives</div>
+      <div class="toc-item"><span class="toc-num">٢٢</span> الرسالة الرسمية — The Formal Letter</div>
+      <div class="toc-item"><span class="toc-num">٢٣</span> من التراث الأدبي — Literary Heritage (المتنبي)</div>
+      <div class="toc-item"><span class="toc-num">٢٤</span> هل الإنترنت مفيد أم ضار؟ — Opinion Text</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 1. ANIMALS ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">١</div>
+    <div>
+      <div class="section-title-ar">الْحَيَوَانَات</div>
+      <div class="section-title-en">Animals</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">فِي الْحَدِيقَةِ حَيَوَانَاتٌ كَثِيرَة. هُنَاكَ أَسَدٌ كَبِيرٌ وَزَرَافَةٌ طَوِيلَة. الْقِطَّةُ صَغِيرَةٌ وَبَيْضَاء. الْكَلْبُ يَلْعَبُ بِسَعَادَة. أَنَا أُحِبُّ الْحَيَوَانَاتِ كَثِيرًا.</p>
+      <p class="passage-en">In the garden there are many animals. There is a big lion and a tall giraffe. The cat is small and white. The dog plays happily. I love animals very much.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا لَوْنُ الْقِطَّة؟</div>
+        <div class="q-en">What colour is the cat?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — كَيْفَ يَلْعَبُ الْكَلْب؟</div>
+        <div class="q-en">How does the dog play?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَا الْحَيَوَانَاتُ الْمَوْجُودَةُ فِي الْحَدِيقَة؟</div>
+        <div class="q-en">What animals are in the garden?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — هَلْ تُحِبُّ الْحَيَوَانَات؟ اكتب جملة.</div>
+        <div class="q-en">Do you like animals? Write one sentence.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">فِي الْحَدِيقَةِ حَيَوَانَاتٌ كَثِيرَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الْقِطَّةُ صَغِيرَةٌ وَبَيْضَاء.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الْكَلْبُ يَلْعَبُ بِسَعَادَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 2. MY FAMILY ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٢</div>
+    <div>
+      <div class="section-title-ar">عَائِلَتِي</div>
+      <div class="section-title-en">My Family</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">أَنَا اسْمِي سَارَة. عَائِلَتِي صَغِيرَةٌ وَمَحْبُوبَة. أَبِي طَبِيبٌ وَأُمِّي مُعَلِّمَة. لَدَيَّ أَخٌ اسْمُهُ عَلِيٌّ وَأُخْتٌ اسْمُهَا رِيم. نَحْنُ نَعِيشُ فِي بَيْتٍ كَبِير. أُحِبُّ عَائِلَتِي كَثِيرًا.</p>
+      <p class="passage-en">My name is Sara. My family is small and beloved. My father is a doctor and my mother is a teacher. I have a brother named Ali and a sister named Reem. We live in a big house. I love my family very much.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا اسْمُ الطِّفْلَة؟</div>
+        <div class="q-en">What is the girl's name?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَا مِهْنَةُ الْأَب؟</div>
+        <div class="q-en">What is the father's job?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَا اسْمُ الْأَخ؟</div>
+        <div class="q-en">What is the brother's name?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — كَيْفَ الْبَيْت؟</div>
+        <div class="q-en">What is the house like?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">عَائِلَتِي صَغِيرَةٌ وَمَحْبُوبَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أَبِي طَبِيبٌ وَأُمِّي مُعَلِّمَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أُحِبُّ عَائِلَتِي كَثِيرًا.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 3. MY SCHOOL DAY ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٣</div>
+    <div>
+      <div class="section-title-ar">يَوْمِي فِي الْمَدْرَسَة</div>
+      <div class="section-title-en">My School Day</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">أَذْهَبُ إِلَى الْمَدْرَسَةِ كُلَّ يَوْم. أَتَعَلَّمُ الْعَرَبِيَّةَ وَالرِّيَاضِيَّاتِ وَالْعُلُوم. مُعَلِّمَتِي اسْمُهَا مَرْيَم. صَدِيقِي الْمُفَضَّلُ اسْمُهُ يُوسُف. نَلْعَبُ مَعًا فِي الاسْتِرَاحَة. أُحِبُّ الْمَدْرَسَةَ.</p>
+      <p class="passage-en">I go to school every day. I learn Arabic, Maths, and Science. My teacher's name is Maryam. My best friend's name is Yusuf. We play together at break time. I like school.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا الْمَوَادُّ الَّتِي يَتَعَلَّمُهَا؟</div>
+        <div class="q-en">What subjects does he/she learn?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَا اسْمُ الْمُعَلِّمَة؟</div>
+        <div class="q-en">What is the teacher's name?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَعَ مَنْ يَلْعَبُ فِي الاسْتِرَاحَة؟</div>
+        <div class="q-en">Who does he/she play with at break?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — هَلْ تُحِبُّ الْمَدْرَسَة؟</div>
+        <div class="q-en">Do you like school?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">أَذْهَبُ إِلَى الْمَدْرَسَةِ كُلَّ يَوْم.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">نَلْعَبُ مَعًا فِي الاسْتِرَاحَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أُحِبُّ الْمَدْرَسَةَ.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 4. FRUITS &AMP; FOOD ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٤</div>
+    <div>
+      <div class="section-title-ar">الْفَوَاكِهُ وَالطَّعَام</div>
+      <div class="section-title-en">Fruits &amp; Food</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">أَنَا أُحِبُّ الْفَوَاكِهَ كَثِيرًا. أُفَضِّلُ الْبُرْتُقَالَ وَالتُّفَّاحَ وَالْعِنَب. أُمِّي تُحَضِّرُ لِي عَصِيرَ الْبُرْتُقَالِ كُلَّ صَبَاح. أَكَلْتُ الْيَوْمَ تُفَّاحَةً حَمْرَاء. الْفَوَاكِهُ لَذِيذَةٌ وَمُفِيدَة.</p>
+      <p class="passage-en">I love fruits very much. I prefer oranges, apples, and grapes. My mother makes me orange juice every morning. Today I ate a red apple. Fruits are delicious and healthy.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا الْفَوَاكِهُ الَّتِي يُفَضِّلُهَا؟</div>
+        <div class="q-en">Which fruits does he/she prefer?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَا الَّذِي تُحَضِّرُهُ الْأُمُّ كُلَّ صَبَاح؟</div>
+        <div class="q-en">What does the mother make every morning?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَا لَوْنُ التُّفَّاحَةِ الَّتِي أَكَلَهَا؟</div>
+        <div class="q-en">What colour was the apple eaten?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — اكتب فَاكِهَتَيْنِ تُحِبُّهُمَا.</div>
+        <div class="q-en">Write two fruits you like.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">أُحِبُّ الْفَوَاكِهَ كَثِيرًا.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الْفَوَاكِهُ لَذِيذَةٌ وَمُفِيدَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أُمِّي تُحَضِّرُ لِي عَصِيرَ الْبُرْتُقَال.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 5. MY ROOM ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٥</div>
+    <div>
+      <div class="section-title-ar">غُرْفَتِي</div>
+      <div class="section-title-en">My Room</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">غُرْفَتِي صَغِيرَةٌ وَجَمِيلَة. فِيهَا سَرِيرٌ وَمَكْتَبٌ وَخِزَانَة. عَلَى الْمَكْتَبِ كُتُبٌ وَأَقْلَام. الْجُدْرَانُ لَوْنُهَا أَزْرَق. أَنَا أُحِبُّ غُرْفَتِي.</p>
+      <p class="passage-en">My room is small and beautiful. It has a bed, a desk, and a wardrobe. On the desk there are books and pens. The walls are blue. I love my room.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَاذَا فِي الْغُرْفَة؟</div>
+        <div class="q-en">What is in the room?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَا لَوْنُ الْجُدْرَان؟</div>
+        <div class="q-en">What colour are the walls?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَاذَا عَلَى الْمَكْتَب؟</div>
+        <div class="q-en">What is on the desk?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — صِفْ غُرْفَتَكَ بِجُمْلَةٍ وَاحِدَة.</div>
+        <div class="q-en">Describe your room in one sentence.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">غُرْفَتِي صَغِيرَةٌ وَجَمِيلَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">عَلَى الْمَكْتَبِ كُتُبٌ وَأَقْلَام.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أَنَا أُحِبُّ غُرْفَتِي.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 6. THE WEATHER ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٦</div>
+    <div>
+      <div class="section-title-ar">الطَّقْس</div>
+      <div class="section-title-en">The Weather</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">الطَّقْسُ الْيَوْمَ جَمِيل. الشَّمْسُ سَاطِعَةٌ وَالسَّمَاءُ صَافِيَة. فِي الشِّتَاءِ يَكُونُ الطَّقْسُ بَارِدًا. أُحِبُّ الرَّبِيعَ لِأَنَّ الزُّهُورَ تَفْتَح. أُمِّي تَقُولُ: "الْبَرْدُ يَجْعَلُنَا نَشْرَبُ الشَّاي!"</p>
+      <p class="passage-en">The weather today is beautiful. The sun is shining and the sky is clear. In winter the weather is cold. I love spring because the flowers bloom. My mother says: "The cold makes us drink tea!"</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — كَيْفَ الطَّقْسُ الْيَوْم؟</div>
+        <div class="q-en">What is today's weather like?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — كَيْفَ الطَّقْسُ فِي الشِّتَاء؟</div>
+        <div class="q-en">What is the weather like in winter?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — لِمَاذَا يُحِبُّ الرَّبِيع؟</div>
+        <div class="q-en">Why does he/she love spring?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — مَا فَصْلُكَ الْمُفَضَّل؟</div>
+        <div class="q-en">What is your favourite season?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">الشَّمْسُ سَاطِعَةٌ وَالسَّمَاءُ صَافِيَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أُحِبُّ الرَّبِيعَ لِأَنَّ الزُّهُورَ تَفْتَح.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الطَّقْسُ الْيَوْمَ جَمِيل.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 7. MY MORNING ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٧</div>
+    <div>
+      <div class="section-title-ar">صَبَاحِي</div>
+      <div class="section-title-en">My Morning</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">أَسْتَيْقِظُ فِي السَّاعَةِ السَّابِعَة. أَغْسِلُ وَجْهِي وَأَسْنَانِي. آكُلُ الْإِفْطَارَ مَعَ عَائِلَتِي. أَشْرَبُ الْحَلِيبَ وَآكُلُ الْخُبْزَ وَالْعَسَل. ثُمَّ أَلْبَسُ مَلَابِسَ الْمَدْرَسَةِ وَأَذْهَبُ.</p>
+      <p class="passage-en">I wake up at seven o'clock. I wash my face and teeth. I eat breakfast with my family. I drink milk and eat bread with honey. Then I put on my school clothes and go.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — فِي أَيِّ سَاعَةٍ يَسْتَيْقِظ؟</div>
+        <div class="q-en">What time does he/she wake up?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَاذَا يَأْكُلُ فِي الْإِفْطَار؟</div>
+        <div class="q-en">What does he/she eat for breakfast?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَاذَا يَفْعَلُ بَعْدَ الْإِفْطَار؟</div>
+        <div class="q-en">What does he/she do after breakfast?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — صِفْ صَبَاحَكَ بِجُمْلَةٍ وَاحِدَة.</div>
+        <div class="q-en">Describe your morning in one sentence.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">أَسْتَيْقِظُ فِي السَّاعَةِ السَّابِعَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">آكُلُ الْإِفْطَارَ مَعَ عَائِلَتِي.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أَشْرَبُ الْحَلِيبَ وَآكُلُ الْخُبْزَ وَالْعَسَل.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 8. SPORTS ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٨</div>
+    <div>
+      <div class="section-title-ar">الرِّيَاضَة</div>
+      <div class="section-title-en">Sports</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">أَنَا أُحِبُّ الرِّيَاضَةَ كَثِيرًا. أَلْعَبُ كُرَةَ الْقَدَمِ مَعَ أَصْدِقَائِي. فَرِيقِي لَوْنُهُ أَخْضَر. نَلْعَبُ فِي الْمَلْعَبِ كُلَّ مَسَاء. الرِّيَاضَةُ تُقَوِّي الْجِسْمَ وَتَجْعَلُنَا سُعَدَاء.</p>
+      <p class="passage-en">I love sport very much. I play football with my friends. My team's colour is green. We play in the stadium every evening. Sport strengthens the body and makes us happy.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا الرِّيَاضَةُ الَّتِي يُحِبُّهَا؟</div>
+        <div class="q-en">What sport does he/she like?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَا لَوْنُ الْفَرِيق؟</div>
+        <div class="q-en">What is the team's colour?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَتَى يَلْعَبُونَ؟</div>
+        <div class="q-en">When do they play?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — مَا فَائِدَةُ الرِّيَاضَة؟</div>
+        <div class="q-en">What is the benefit of sport?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">أَلْعَبُ كُرَةَ الْقَدَمِ مَعَ أَصْدِقَائِي.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">نَلْعَبُ فِي الْمَلْعَبِ كُلَّ مَسَاء.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الرِّيَاضَةُ تُقَوِّي الْجِسْمَ.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 9. CLOTHES ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">٩</div>
+    <div>
+      <div class="section-title-ar">الْمَلَابِس</div>
+      <div class="section-title-en">Clothes</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">أَنَا أَلْبَسُ قَمِيصًا أَبْيَضَ وَبَنْطَلُونًا أَزْرَق. فِي الشِّتَاءِ أَلْبَسُ مَعْطَفًا دَافِئًا. أُمِّي تَشْتَرِي لِي مَلَابِسَ جَدِيدَةً فِي الْعِيد. أُفَضِّلُ اللَّوْنَ الْأَخْضَر. أَنَا أَعْتَنِي بِمَلَابِسِي.</p>
+      <p class="passage-en">I wear a white shirt and blue trousers. In winter I wear a warm coat. My mother buys me new clothes for Eid. I prefer the colour green. I take care of my clothes.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا الَّذِي يَلْبَسُهُ الطِّفْل؟</div>
+        <div class="q-en">What does the child wear?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَاذَا يَلْبَسُ فِي الشِّتَاء؟</div>
+        <div class="q-en">What does he/she wear in winter?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَتَى تَشْتَرِي الْأُمُّ الْمَلَابِسَ الْجَدِيدَة؟</div>
+        <div class="q-en">When does the mother buy new clothes?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — مَا لَوْنُكَ الْمُفَضَّل؟</div>
+        <div class="q-en">What is your favourite colour?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">أَلْبَسُ قَمِيصًا أَبْيَضَ وَبَنْطَلُونًا أَزْرَق.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">فِي الشِّتَاءِ أَلْبَسُ مَعْطَفًا دَافِئًا.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أَنَا أَعْتَنِي بِمَلَابِسِي.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 10. TRANSPORT ═══ -->
+<div class="section-card" data-level="a1">
+  <div class="section-header">
+    <div class="section-num">١٠</div>
+    <div>
+      <div class="section-title-ar">الْمَوَاصَلَات</div>
+      <div class="section-title-en">Transport</div>
+    </div>
+    <div class="level-badge">A1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">هُنَاكَ وَسَائِلُ نَقْلٍ كَثِيرَة. الْحَافِلَةُ تَحْمِلُ كَثِيرًا مِنَ النَّاس. الطَّائِرَةُ تَطِيرُ فِي السَّمَاء. أَنَا أَذْهَبُ إِلَى الْمَدْرَسَةِ بِالسَّيَّارَة. أَبِي يَرْكَبُ الدَّرَّاجَةَ فِي الصَّبَاح.</p>
+      <p class="passage-en">There are many means of transport. The bus carries many people. The aeroplane flies in the sky. I go to school by car. My father rides a bicycle in the morning.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَاذَا تَحْمِلُ الْحَافِلَة؟</div>
+        <div class="q-en">What does the bus carry?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — أَيْنَ تَطِيرُ الطَّائِرَة؟</div>
+        <div class="q-en">Where does the aeroplane fly?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — كَيْفَ يَذْهَبُ الطِّفْلُ إِلَى الْمَدْرَسَة؟</div>
+        <div class="q-en">How does the child go to school?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — مَا وَسِيلَةُ النَّقْلِ الْمُفَضَّلَةُ لَدَيْك؟</div>
+        <div class="q-en">What is your favourite transport?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">الْحَافِلَةُ تَحْمِلُ كَثِيرًا مِنَ النَّاس.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الطَّائِرَةُ تَطِيرُ فِي السَّمَاء.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أَذْهَبُ إِلَى الْمَدْرَسَةِ بِالسَّيَّارَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 11. AT THE MARKET ═══ -->
+<div class="section-card" data-level="a2">
+  <div class="section-header">
+    <div class="section-num">١١</div>
+    <div>
+      <div class="section-title-ar">فِي السُّوق</div>
+      <div class="section-title-en">At the Market</div>
+    </div>
+    <div class="level-badge">A2</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">ذَهَبْتُ مَعَ أُمِّي إِلَى السُّوقِ الْكَبِير. رَأَيْنَا خُضَارًا وَفَوَاكِهَ طَازَجَة. اشْتَرَيْنَا طَمَاطِمَ وَخِيارًا وَبُرْتُقَالًا. الْبَائِعُ كَانَ لَطِيفًا وَأَعْطَانَا خَصْمًا. الْأَسْعَارُ كَانَتْ مُنَاسِبَة وَعُدْنَا إِلَى الْبَيْتِ سُعَدَاء.</p>
+      <p class="passage-en">I went with my mother to the big market. We saw fresh vegetables and fruits. We bought tomatoes, cucumber, and oranges. The seller was kind and gave us a discount. The prices were reasonable and we returned home happy.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَعَ مَنْ ذَهَبَ إِلَى السُّوق؟</div>
+        <div class="q-en">Who did he/she go to the market with?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَاذَا اشْتَرَوْا مِنَ السُّوق؟</div>
+        <div class="q-en">What did they buy from the market?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — كَيْفَ كَانَ الْبَائِع؟</div>
+        <div class="q-en">What was the seller like?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — مَاذَا تُحِبُّ أَنْ تَشْتَرِيَ مِنَ السُّوق؟</div>
+        <div class="q-en">What do you like to buy from the market?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">ذَهَبْتُ مَعَ أُمِّي إِلَى السُّوقِ الْكَبِير.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">اشْتَرَيْنَا طَمَاطِمَ وَخِيارًا وَبُرْتُقَالًا.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">عُدْنَا إِلَى الْبَيْتِ سُعَدَاء.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 12. THE FOUR SEASONS ═══ -->
+<div class="section-card" data-level="a2">
+  <div class="section-header">
+    <div class="section-num">١٢</div>
+    <div>
+      <div class="section-title-ar">الْفُصُولُ الأَرْبَعَة</div>
+      <div class="section-title-en">The Four Seasons</div>
+    </div>
+    <div class="level-badge">A2</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">لِلسَّنَةِ أَرْبَعَةُ فُصُول: الرَّبِيعُ وَالصَّيْفُ وَالْخَرِيفُ وَالشِّتَاء. فِي الرَّبِيعِ تَتَفَتَّحُ الزُّهُورُ وَيَعُودُ الطُّيُور. الصَّيْفُ حَارٌّ وَنَذْهَبُ فِيهِ إِلَى الشَّاطِئ. فِي الْخَرِيفِ تَتَسَاقَطُ أَوْرَاقُ الشَّجَر. أُحِبُّ الشِّتَاءَ لِأَنِّي أَشْرَبُ الشَّوْكُولاتَةَ السَّاخِنَة.</p>
+      <p class="passage-en">The year has four seasons: spring, summer, autumn, and winter. In spring flowers bloom and birds return. Summer is hot and we go to the beach. In autumn leaves fall from trees. I love winter because I drink hot chocolate.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — كَمْ فَصْلًا فِي السَّنَة؟</div>
+        <div class="q-en">How many seasons are in a year?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَاذَا يَحْدُثُ فِي الرَّبِيع؟</div>
+        <div class="q-en">What happens in spring?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — أَيْنَ يَذْهَبُونَ فِي الصَّيْف؟</div>
+        <div class="q-en">Where do they go in summer?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — لِمَاذَا يُحِبُّ الشِّتَاء؟</div>
+        <div class="q-en">Why does he/she love winter?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">لِلسَّنَةِ أَرْبَعَةُ فُصُول.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">فِي الرَّبِيعِ تَتَفَتَّحُ الزُّهُورُ وَيَعُودُ الطُّيُور.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">فِي الْخَرِيفِ تَتَسَاقَطُ أَوْرَاقُ الشَّجَر.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 13. MY HOBBIES ═══ -->
+<div class="section-card" data-level="a2">
+  <div class="section-header">
+    <div class="section-num">١٣</div>
+    <div>
+      <div class="section-title-ar">هِوَايَاتِي</div>
+      <div class="section-title-en">My Hobbies</div>
+    </div>
+    <div class="level-badge">A2</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">لَدَيَّ هِوَايَاتٌ كَثِيرَة. أُحِبُّ الرَّسْمَ وَأَرْسُمُ كُلَّ يَوْم. كَذَلِكَ أَقْرَأُ الْقَصَصَ وَالرِّوَايَات. فِي عُطْلَةِ نِهَايَةِ الأُسْبُوعِ أَلْعَبُ مَعَ أَصْدِقَائِي. أَحْيَانًا نَطْبُخُ مَعًا وَيْكُونُ ذَلِكَ مُمْتِعًا. الْهِوَايَاتُ تُسْعِدُنَا وَتُنَمِّي مَوَاهِبَنَا.</p>
+      <p class="passage-en">I have many hobbies. I love drawing and I draw every day. I also read stories and novels. At the weekend I play with my friends. Sometimes we cook together and that is fun. Hobbies make us happy and develop our talents.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا هِوَايَاتُهُ/هَا؟</div>
+        <div class="q-en">What are his/her hobbies?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَتَى يَلْعَبُ مَعَ أَصْدِقَائِه؟</div>
+        <div class="q-en">When does he/she play with friends?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَاذَا يَفْعَلُونَ أَحْيَانًا مَعًا؟</div>
+        <div class="q-en">What do they sometimes do together?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — مَا هِوَايَتُكَ الْمُفَضَّلَة؟ اكتب جملتين.</div>
+        <div class="q-en">What is your favourite hobby? Write two sentences.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">أُحِبُّ الرَّسْمَ وَأَرْسُمُ كُلَّ يَوْم.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الْهِوَايَاتُ تُسْعِدُنَا وَتُنَمِّي مَوَاهِبَنَا.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">فِي عُطْلَةِ نِهَايَةِ الأُسْبُوعِ أَلْعَبُ مَعَ أَصْدِقَائِي.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 14. ON HOLIDAY ═══ -->
+<div class="section-card" data-level="a2">
+  <div class="section-header">
+    <div class="section-num">١٤</div>
+    <div>
+      <div class="section-title-ar">فِي الْعُطْلَة</div>
+      <div class="section-title-en">On Holiday</div>
+    </div>
+    <div class="level-badge">A2</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">فِي الصَّيْفِ الْمَاضِي سَافَرْنَا إِلَى مَدِينَةٍ جَمِيلَة. زُرْنَا الْمَتَاحِفَ وَالْحَدَائِقَ وَالشَّوَارِعَ الْقَدِيمَة. أَكَلْنَا أَطْبَاقًا لَذِيذَةً لَمْ نَجِدْهَا مِنْ قَبْل. الْفُنْدُقُ كَانَ مُرِيحًا وَالْغُرَفُ وَاسِعَة. عُدْنَا بِذِكْرَيَاتٍ جَمِيلَةٍ وَصُوَرٍ كَثِيرَة.</p>
+      <p class="passage-en">Last summer we travelled to a beautiful city. We visited museums, gardens, and old streets. We ate delicious dishes we had not found before. The hotel was comfortable and the rooms were spacious. We returned with beautiful memories and many photos.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — أَيْنَ سَافَرَتِ الْعَائِلَة؟</div>
+        <div class="q-en">Where did the family travel?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَاذَا زَارُوا فِي الْمَدِينَة؟</div>
+        <div class="q-en">What did they visit in the city?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — كَيْفَ كَانَ الْفُنْدُق؟</div>
+        <div class="q-en">What was the hotel like?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — صِفْ عُطْلَتَكَ الْمُفَضَّلَة.</div>
+        <div class="q-en">Describe your favourite holiday.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">سَافَرْنَا إِلَى مَدِينَةٍ جَمِيلَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أَكَلْنَا أَطْبَاقًا لَذِيذَةً لَمْ نَجِدْهَا مِنْ قَبْل.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">عُدْنَا بِذِكْرَيَاتٍ جَمِيلَةٍ وَصُوَرٍ كَثِيرَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 15. HEALTH &AMP; BODY ═══ -->
+<div class="section-card" data-level="a2">
+  <div class="section-header">
+    <div class="section-num">١٥</div>
+    <div>
+      <div class="section-title-ar">الصِّحَّةُ وَالْجِسْم</div>
+      <div class="section-title-en">Health &amp; Body</div>
+    </div>
+    <div class="level-badge">A2</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">الْجِسْمُ السَّلِيمُ نِعْمَةٌ عَظِيمَة. يَجِبُ أَنْ نَأْكُلَ طَعَامًا صِحِّيًّا وَنَشْرَبَ الْمَاءَ. الرِّيَاضَةُ تُقَوِّي الْعَضَلَاتِ وَتُنَشِّطُ الدَّوْرَةَ الدَّمَوِيَّة. النَّوْمُ الْكَافِي مُهِمٌّ لِلنُّمُوّ. نَغْسِلُ أَيْدِيَنَا قَبْلَ الْأَكْلِ لِنَبْتَعِدَ عَنِ الأَمْرَاض.</p>
+      <p class="passage-en">A healthy body is a great blessing. We must eat healthy food and drink water. Sport strengthens muscles and activates blood circulation. Enough sleep is important for growth. We wash our hands before eating to stay away from diseases.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — لِمَاذَا الْجِسْمُ السَّلِيمُ نِعْمَة؟</div>
+        <div class="q-en">Why is a healthy body a blessing?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — مَا فَائِدَةُ الرِّيَاضَة؟</div>
+        <div class="q-en">What is the benefit of sport?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — لِمَاذَا نَغْسِلُ أَيْدِيَنَا قَبْلَ الْأَكْل؟</div>
+        <div class="q-en">Why do we wash our hands before eating?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — اكتب ثَلَاثَةَ عَادَاتٍ صِحِّيَّة.</div>
+        <div class="q-en">Write three healthy habits.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">الْجِسْمُ السَّلِيمُ نِعْمَةٌ عَظِيمَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الرِّيَاضَةُ تُقَوِّي الْعَضَلَاتِ.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">نَغْسِلُ أَيْدِيَنَا قَبْلَ الْأَكْل.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 16. FRIENDS AT SCHOOL ═══ -->
+<div class="section-card" data-level="a2">
+  <div class="section-header">
+    <div class="section-num">١٦</div>
+    <div>
+      <div class="section-title-ar">أَصْدِقَائِي فِي الْمَدْرَسَة</div>
+      <div class="section-title-en">Friends at School</div>
+    </div>
+    <div class="level-badge">A2</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">لَدَيَّ أَصْدِقَاءُ كَثِيرُونَ فِي الْمَدْرَسَة. أَفْضَلُ صَدِيقٍ لِي اسْمُهُ كَرِيم. هُوَ طَيِّبٌ وَيُسَاعِدُنِي دَائِمًا. نَجْلِسُ مَعًا فِي الْفَصْلِ وَنَتَشَارَكُ الطَّعَام. الصَّدَاقَةُ الْحَقِيقِيَّةُ كَنْزٌ لَا يُقَدَّر بِثَمَن.</p>
+      <p class="passage-en">I have many friends at school. My best friend's name is Kareem. He is kind and always helps me. We sit together in class and share food. True friendship is a priceless treasure.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — مَا اسْمُ أَفْضَلِ صَدِيق؟</div>
+        <div class="q-en">What is the best friend's name?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — كَيْفَ يَكُونُ صَدِيقُه/هَا؟</div>
+        <div class="q-en">What is his/her friend like?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — مَاذَا يَفْعَلَانِ مَعًا فِي الْفَصْل؟</div>
+        <div class="q-en">What do they do together in class?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — صِفْ صَدِيقَكَ الْمُفَضَّل.</div>
+        <div class="q-en">Describe your best friend.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">لَدَيَّ أَصْدِقَاءُ كَثِيرُونَ فِي الْمَدْرَسَة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">هُوَ طَيِّبٌ وَيُسَاعِدُنِي دَائِمًا.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الصَّدَاقَةُ الْحَقِيقِيَّةُ كَنْزٌ لَا يُقَدَّر بِثَمَن.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 17. ENVIRONMENT &AMP; NATURE ═══ -->
+<div class="section-card" data-level="b1">
+  <div class="section-header">
+    <div class="section-num">١٧</div>
+    <div>
+      <div class="section-title-ar">البيئة والطبيعة</div>
+      <div class="section-title-en">Environment &amp; Nature</div>
+    </div>
+    <div class="level-badge">B1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">تواجه بيئتنا اليوم تحديات كثيرة بسبب التلوث وقطع الأشجار. المحيطات مليئة بالبلاستيك والنفايات التي تضر الكائنات البحرية. يمكننا حماية البيئة بتقليل استخدام البلاستيك وإعادة تدوير النفايات. زرع الأشجار يساعد على تنقية الهواء ويوفر مأوى للطيور. كلنا مسؤولون عن الحفاظ على كوكبنا للأجيال القادمة.</p>
+      <p class="passage-en">Our environment faces many challenges today due to pollution and deforestation. The oceans are full of plastic and waste that harms marine life. We can protect the environment by reducing plastic use and recycling waste. Planting trees helps purify the air and provides shelter for birds. We are all responsible for preserving our planet for future generations.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — ما التحديات التي تواجه البيئة؟</div>
+        <div class="q-en">What challenges does the environment face?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — كيف يمكننا حماية البيئة؟</div>
+        <div class="q-en">How can we protect the environment?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — ما فوائد زرع الأشجار؟</div>
+        <div class="q-en">What are the benefits of planting trees?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — اكتب ثلاثة أشياء تستطيع فعلها لحماية البيئة.</div>
+        <div class="q-en">Write three things you can do to protect the environment.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">تواجه بيئتنا اليوم تحديات كثيرة بسبب التلوث.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">زرع الأشجار يساعد على تنقية الهواء.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">كلنا مسؤولون عن الحفاظ على كوكبنا للأجيال القادمة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 18. TECHNOLOGY IN OUR LIVES ═══ -->
+<div class="section-card" data-level="b1">
+  <div class="section-header">
+    <div class="section-num">١٨</div>
+    <div>
+      <div class="section-title-ar">التكنولوجيا في حياتنا</div>
+      <div class="section-title-en">Technology in Our Lives</div>
+    </div>
+    <div class="level-badge">B1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">أصبحت التكنولوجيا جزءا أساسيا من حياتنا اليومية. نستخدم الهواتف الذكية للتواصل والبحث عن المعلومات. الإنترنت يتيح لنا التعلم من أي مكان في العالم. ومع ذلك، يجب أن نستخدم التكنولوجيا بحكمة ونحدد وقتا للراحة بعيدا عن الشاشات. التوازن بين الحياة الرقمية والحياة الواقعية ضروري لصحتنا النفسية.</p>
+      <p class="passage-en">Technology has become an essential part of our daily lives. We use smartphones to communicate and search for information. The internet allows us to learn from anywhere in the world. However, we must use technology wisely and set time to rest away from screens. Balance between digital and real life is necessary for our mental health.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — كيف نستخدم التكنولوجيا في حياتنا؟</div>
+        <div class="q-en">How do we use technology in our lives?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — ما فوائد الإنترنت؟</div>
+        <div class="q-en">What are the benefits of the internet?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — لماذا يجب أن نستخدم التكنولوجيا بحكمة؟</div>
+        <div class="q-en">Why should we use technology wisely?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — ما رأيك في استخدام الهاتف الذكي أكثر من ساعتين يوميا؟</div>
+        <div class="q-en">What is your opinion on using a smartphone more than two hours a day?</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">أصبحت التكنولوجيا جزءا أساسيا من حياتنا اليومية.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">الإنترنت يتيح لنا التعلم من أي مكان في العالم.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">التوازن بين الحياة الرقمية والحياة الواقعية ضروري.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 19. TRAVEL &AMP; TOURISM ═══ -->
+<div class="section-card" data-level="b1">
+  <div class="section-header">
+    <div class="section-num">١٩</div>
+    <div>
+      <div class="section-title-ar">السفر والسياحة</div>
+      <div class="section-title-en">Travel &amp; Tourism</div>
+    </div>
+    <div class="level-badge">B1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">يعتبر السفر من أجمل التجارب التي تثري شخصية الإنسان. حين نسافر إلى بلدان جديدة نكتشف ثقافات مختلفة ونتعلم لغات جديدة. السياحة تساهم في تنمية الاقتصاد وتعزز التفاهم بين الشعوب. من المهم أن نحترم عادات البلد الذي نزوره ونحافظ على مواقعه التاريخية. أجمل ما في السفر هو العودة بذكريات لا تُنسى وصداقات من شتى بقاع الأرض.</p>
+      <p class="passage-en">Travel is considered one of the most beautiful experiences that enriches a person's character. When we travel to new countries we discover different cultures and learn new languages. Tourism contributes to economic development and promotes understanding between peoples. It is important to respect the customs of the country we visit and to preserve its historical sites. The most beautiful thing about travel is returning with unforgettable memories and friendships from all corners of the earth.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — لماذا يعتبر السفر تجربة مهمة؟</div>
+        <div class="q-en">Why is travel considered an important experience?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — كيف تساهم السياحة في المجتمع؟</div>
+        <div class="q-en">How does tourism contribute to society?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — ما الذي يجب علينا احترامه حين نسافر؟</div>
+        <div class="q-en">What must we respect when we travel?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — صف رحلة سفر حقيقية أو متخيلة في فقرة قصيرة.</div>
+        <div class="q-en">Describe a real or imaginary trip in a short paragraph.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">السفر من أجمل التجارب التي تثري شخصية الإنسان.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">السياحة تساهم في تنمية الاقتصاد وتعزز التفاهم بين الشعوب.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">أجمل ما في السفر هو العودة بذكريات لا تُنسى.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ 20. JOBS &AMP; PROFESSIONS ═══ -->
+<div class="section-card" data-level="b1">
+  <div class="section-header">
+    <div class="section-num">٢٠</div>
+    <div>
+      <div class="section-title-ar">المهن والأعمال</div>
+      <div class="section-title-en">Jobs &amp; Professions</div>
+    </div>
+    <div class="level-badge">B1</div>
+  </div>
+  <div class="section-body">
+    <p class="block-label">📖 اقرأ النص — Read the passage</p>
+    <div class="passage-box">
+      <p class="passage-ar">تتنوع المهن في مجتمعنا وكلها ضرورية لسير الحياة. الطبيب يعالج المرضى ويحافظ على صحتهم. المعلم يبني العقول ويشكّل الأجيال. المهندس يصمم المباني والجسور. الفنان يعبر عن الجمال ويثري الثقافة. عند اختيار مهنتك، فكر في مواهبك وشغفك، لأن العمل الذي تحبه لا يشعرك بالتعب.</p>
+      <p class="passage-en">Professions in our society are varied and all are necessary for life to run. The doctor treats patients and maintains their health. The teacher builds minds and shapes generations. The engineer designs buildings and bridges. The artist expresses beauty and enriches culture. When choosing your profession, think about your talents and passion, because the work you love does not make you feel tired.</p>
+    </div>
+    <p class="block-label">❓ أجب على الأسئلة — Answer the questions</p>
+    <div class="q-grid">
+      <div class="q-item">
+        <div class="q-ar">١ — اذكر أربع مهن وردت في النص.</div>
+        <div class="q-en">Name four professions mentioned in the text.</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٢ — ما دور المعلم في المجتمع؟</div>
+        <div class="q-en">What is the role of the teacher in society?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٣ — ما النصيحة التي يقدمها النص عند اختيار المهنة؟</div>
+        <div class="q-en">What advice does the text give when choosing a profession?</div>
+        <span class="ans-line"></span>
+      </div>
+      <div class="q-item">
+        <div class="q-ar">٤ — ما المهنة التي تريد أن تعمل بها؟ اشرح السبب.</div>
+        <div class="q-en">What profession do you want to work in? Explain why.</div>
+        <span class="ans-line"></span>
+      </div>
+    </div>
+    <div class="writing-hdr">✏️ تدريب الكتابة — Copy each sentence carefully</div>
+    <div class="w-sentence">
+      <div class="model-text">تتنوع المهن في مجتمعنا وكلها ضرورية لسير الحياة.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">المعلم يبني العقول ويشكّل الأجيال.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+    <div class="w-sentence">
+      <div class="model-text">العمل الذي تحبه لا يشعرك بالتعب.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     B2 — Upper Intermediate (4 worksheets)
+     ══════════════════════════════════════════════════════════════════ -->
+
+<!-- B2 §1 — News article: technology -->
+<div class="section-card" data-level="b2">
+  <div class="section-header">
+    <div class="section-num">21</div>
+    <div>
+      <div class="section-title-ar">الذكاء الاصطناعي في حياتنا</div>
+      <div class="section-title-en">Artificial Intelligence in Our Lives</div>
+    </div>
+    <div class="level-badge">B2</div>
+  </div>
+  <div class="section-body">
+
+    <div class="block-label">📰 مقال إخباري — News Article</div>
+    <div class="passage-box">
+      <p style="margin:0;line-height:2.1;">
+        بَاتَ الذَّكَاءُ الِاصْطِنَاعِيُّ جُزْءًا لَا يَتَجَزَّأُ مِنْ حَيَاتِنَا الْيَوْمِيَّةِ.
+        فَمِنَ الْهَوَاتِفِ الذَّكِيَّةِ إِلَى السَّيَّارَاتِ ذَاتِيَّةِ الْقِيَادَةِ، تَتَوَسَّعُ تَطْبِيقَاتُهُ بِسُرْعَةٍ مَذْهِلَةٍ.
+        وَقَدْ أَدَّى ذَلِكَ إِلَى نِقَاشَاتٍ وَاسِعَةٍ حَوْلَ مُسْتَقْبَلِ سُوقِ الْعَمَلِ وَالتَّحَدِّيَاتِ الْأَخْلَاقِيَّةِ الْمُرْتَبِطَةِ بِهَذِهِ التِّكْنُولُوجِيَا.
+        يَرَى الْمُتَفَائِلُونَ أَنَّ الذَّكَاءَ الِاصْطِنَاعِيَّ سَيَخْلُقُ فُرَصَ عَمَلٍ جَدِيدَةً وَيَرْفَعُ مُسْتَوَى الْإِنْتَاجِيَّةِ.
+        فِي الْمُقَابِلِ، يُحَذِّرُ الْمُتَشَائِمُونَ مِنْ أَنَّهُ سَيَسْتَبْدِلُ كَثِيرًا مِنَ الْوَظَائِفِ التَّقْلِيدِيَّةِ.
+      </p>
+    </div>
+
+    <div class="block-label">❓ أسئلة الفهم — Comprehension</div>
+    <div style="margin-bottom:1.5rem;">
+      <div class="q-ar">١. مَا هِيَ الْمَجَالَاتُ الَّتِي يَذْكُرُهَا الْمَقَالُ كَأَمْثِلَةٍ لِتَطْبِيقَاتِ الذَّكَاءِ الِاصْطِنَاعِيِّ؟</div>
+      <span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٢. مَا هُوَ مَوْقِفُ الْمُتَفَائِلِينَ مِنَ الذَّكَاءِ الِاصْطِنَاعِيِّ؟ وَمَا هُوَ مَوْقِفُ الْمُتَشَائِمِينَ؟</div>
+      <span class="trace-line"></span>
+      <span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٣. مَا رَأْيُكَ الشَّخْصِيُّ فِي تَأْثِيرِ الذَّكَاءِ الِاصْطِنَاعِيِّ عَلَى الْمُجْتَمَعِ؟</div>
+      <span class="trace-line"></span>
+      <span class="trace-line"></span>
+    </div>
+
+    <div class="block-label">📝 مفردات جديدة — Vocabulary</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.65rem;margin-bottom:1.5rem;">
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">لَا يَتَجَزَّأُ</div>
+        <div style="font-size:.8rem;color:var(--muted);">inseparable / integral</div>
+      </div>
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">مَذْهِلَة</div>
+        <div style="font-size:.8rem;color:var(--muted);">astonishing / remarkable</div>
+      </div>
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">الْمُتَفَائِلُونَ</div>
+        <div style="font-size:.8rem;color:var(--muted);">optimists</div>
+      </div>
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">الْمُتَشَائِمُونَ</div>
+        <div style="font-size:.8rem;color:var(--muted);">pessimists</div>
+      </div>
+    </div>
+
+    <div class="block-label">✍️ تعبير كتابي — Writing Task</div>
+    <div class="writing-hdr">اكتب فقرة (٦٠–٨٠ كلمة) عن دور التكنولوجيا في التعليم.</div>
+    <div class="writing-lines">
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+
+<!-- B2 §2 — Formal letter writing -->
+<div class="section-card" data-level="b2">
+  <div class="section-header">
+    <div class="section-num">22</div>
+    <div>
+      <div class="section-title-ar">الرِّسَالَةُ الرَّسْمِيَّةُ</div>
+      <div class="section-title-en">The Formal Letter</div>
+    </div>
+    <div class="level-badge">B2</div>
+  </div>
+  <div class="section-body">
+
+    <div class="block-label">✉️ نموذج رسالة رسمية — Model Formal Letter</div>
+    <div class="passage-box">
+      <p style="margin:0 0 .5rem;line-height:2.1;text-align:right;">
+        <strong>الموضوع: طلب التحاق ببرنامج المنحة الدراسية</strong>
+      </p>
+      <p style="margin:0;line-height:2.1;">
+        تَحِيَّةً طَيِّبَةً وَبَعْدُ،
+      </p>
+      <p style="margin:.5rem 0 0;line-height:2.1;">
+        يُشَرِّفُنِي أَنْ أَتَقَدَّمَ بِطَلَبِ الِالْتِحَاقِ بِبَرْنَامَجِ الْمِنَحِ الدِّرَاسِيَّةِ الَّذِي تُقَدِّمُهُ مُؤَسَّسَتُكُمُ الْمُوَقَّرَةُ لِلْعَامِ الدِّرَاسِيِّ الْقَادِمِ.
+        وَأَوَدُّ أَنْ أُوضِحَ أَنَّنِي طَالِبٌ مُتَفَوِّقٌ فِي اللُّغَةِ الْعَرَبِيَّةِ وَآدَابِهَا، وَأَمْتَلِكُ شَغَفًا عَمِيقًا بِالثَّقَافَةِ الْعَرَبِيَّةِ.
+        أَرْجُو أَنْ تُوَلُّوا طَلَبِي الِاهْتِمَامَ اللَّازِمَ، وَتَقَبَّلُوا خَالِصَ تَقْدِيرِي وَاحْتِرَامِي.
+      </p>
+    </div>
+
+    <div class="block-label">❓ أسئلة التحليل — Analysis Questions</div>
+    <div style="margin-bottom:1.5rem;">
+      <div class="q-ar">١. مَا الْغَرَضُ مِنَ الرِّسَالَةِ؟ وَمَنِ الْمُرْسَلُ وَمَنِ الْمُرْسَلُ إِلَيْهِ؟</div>
+      <span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٢. اِسْتَخْرِجْ مِنَ الرِّسَالَةِ ثَلَاثَ عِبَارَاتٍ رَسْمِيَّةٍ شَائِعَةٍ.</div>
+      <span class="trace-line"></span>
+      <span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٣. كَيْفَ تَخْتَلِفُ لُغَةُ الرِّسَالَةِ الرَّسْمِيَّةِ عَنِ اللُّغَةِ الْيَوْمِيَّةِ؟</div>
+      <span class="trace-line"></span>
+    </div>
+
+    <div class="block-label">✍️ مهمة كتابية — Writing Task</div>
+    <div class="writing-hdr">اكتب رسالة رسمية (٨٠–١٠٠ كلمة) إلى مدير مدرستك تطلب فيها إقامة نادٍ للغة العربية.</div>
+    <div class="writing-lines">
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+
+<!-- B2 §3 — Literature / poetry excerpt -->
+<div class="section-card" data-level="b2">
+  <div class="section-header">
+    <div class="section-num">23</div>
+    <div>
+      <div class="section-title-ar">مِنَ التُّرَاثِ الْأَدَبِيِّ</div>
+      <div class="section-title-en">From the Literary Heritage</div>
+    </div>
+    <div class="level-badge">B2</div>
+  </div>
+  <div class="section-body">
+
+    <div class="block-label">📜 قصيدة — Poem (المتنبي)</div>
+    <div class="passage-box" style="text-align:center;">
+      <p style="margin:0;line-height:2.4;font-size:1.15rem;font-family:'Scheherazade New',serif;">
+        عَلَى قَدْرِ أَهْلِ الْعَزْمِ تَأْتِي الْعَزَائِمُ<br>
+        وَتَأْتِي عَلَى قَدْرِ الْكِرَامِ الْمَكَارِمُ<br>
+        وَتَعْظُمُ فِي عَيْنِ الصَّغِيرِ صِغَارُهَا<br>
+        وَتَصْغُرُ فِي عَيْنِ الْعَظِيمِ الْعَظَائِمُ
+      </p>
+      <p style="margin:.8rem 0 0;font-size:.78rem;color:var(--muted);font-family:system-ui,sans-serif;direction:ltr;">
+        — Al-Mutanabbi (915–965 CE)
+      </p>
+    </div>
+
+    <div class="block-label">🔍 شرح المعنى — Meaning & Analysis</div>
+    <div style="background:var(--cream);border:1px solid var(--border);border-radius:.75rem;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.88rem;line-height:1.9;">
+      <strong>البيت الأول:</strong> تتناسب العزائم مع مكانة أصحابها — فالعظماء يحملون عزائم عظيمة.<br>
+      <strong>البيت الثاني:</strong> الكرماء يحملون مكارم الأخلاق بنفس القدر.<br>
+      <strong>البيتان الثالث والرابع:</strong> الأشياء الصغيرة تبدو كبيرة لأصحاب النفوس الصغيرة، والعكس صحيح.
+    </div>
+
+    <div class="block-label">❓ أسئلة الفهم — Comprehension</div>
+    <div style="margin-bottom:1.5rem;">
+      <div class="q-ar">١. مَا الْمَعْنَى الرَّئِيسِيُّ لِهَذِهِ الْأَبْيَاتِ بِكَلِمَاتِكَ الْخَاصَّةِ؟</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٢. مَا الطِّبَاقُ (التناقض) الَّذِي يَسْتَخْدِمُهُ الشَّاعِرُ فِي الْبَيْتَيْنِ الثَّالِثِ وَالرَّابِعِ؟</div>
+      <span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٣. هَلْ تَتَّفِقُ مَعَ فِكْرَةِ الشَّاعِرِ؟ عَلِّلْ إِجَابَتَكَ.</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+
+    <div class="block-label">✍️ تعبير — Expression</div>
+    <div class="writing-hdr">اكتب فقرة قصيرة (٥٠–٧٠ كلمة) عن شخصية عربية تاريخية تُعجبك، مستعيناً بمفردات القصيدة.</div>
+    <div class="writing-lines">
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+
+<!-- B2 §4 — Opinion / argument text -->
+<div class="section-card" data-level="b2">
+  <div class="section-header">
+    <div class="section-num">24</div>
+    <div>
+      <div class="section-title-ar">هَلِ الْإِنْتَرْنَتُ مُفِيدٌ أَمْ ضَارٌّ؟</div>
+      <div class="section-title-en">Is the Internet Beneficial or Harmful?</div>
+    </div>
+    <div class="level-badge">B2</div>
+  </div>
+  <div class="section-body">
+
+    <div class="block-label">💬 نص رأي — Opinion Text</div>
+    <div class="passage-box">
+      <p style="margin:0;line-height:2.1;">
+        يَتَصَاعَدُ الْجَدَلُ حَوْلَ تَأْثِيرِ الْإِنْتَرْنَتِ عَلَى الشَّبَابِ، إِذْ يَرَى فَرِيقٌ أَنَّهُ بَوَّابَةٌ لَا غِنَى عَنْهَا لِلْمَعْرِفَةِ وَالتَّوَاصُلِ.
+        فَبِفَضْلِهِ، أَصْبَحَ الْوُصُولُ إِلَى الْمَعْلُومَاتِ مِنْ جَمِيعِ أَنْحَاءِ الْعَالَمِ مُمْكِنًا فِي ثَوَانٍ مَعْدُودَةٍ.
+        فِي حِينِ يُحَذِّرُ فَرِيقٌ آخَرُ مِنَ الِاسْتِخْدَامِ الْمُفْرِطِ الَّذِي يُؤَدِّي إِلَى الْعُزْلَةِ الِاجْتِمَاعِيَّةِ وَضَعْفِ التَّحْصِيلِ الدِّرَاسِيِّ.
+        وَالرَّأْيُ الْوَسَطُ أَنَّ الْإِنْتَرْنَتَ أَدَاةٌ كَسَائِرِ الْأَدَوَاتِ: نَافِعَةٌ إِنْ أَحْسَنَّا اسْتِخْدَامَهَا، ضَارَّةٌ إِنْ أَسَأْنَاهُ.
+      </p>
+    </div>
+
+    <div class="block-label">❓ أسئلة نقدية — Critical Questions</div>
+    <div style="margin-bottom:1.5rem;">
+      <div class="q-ar">١. مَا الْحُجَجُ الَّتِي يَسْرُدُهَا الْمُؤَيِّدُونَ لِلْإِنْتَرْنَتِ؟</div>
+      <span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٢. مَا الْمَخَاطِرُ الَّتِي يُحَذِّرُ مِنْهَا الْمُعَارِضُونَ؟</div>
+      <span class="trace-line"></span>
+      <div class="q-ar" style="margin-top:.8rem;">٣. مَاذَا يَعْنِي النَّصُّ بِعِبَارَةِ «الرَّأْيُ الْوَسَطُ»؟ هَلْ تُوَافِقُ عَلَيْهِ؟</div>
+      <span class="trace-line"></span><span class="trace-line"></span>
+    </div>
+
+    <div class="block-label">📝 مفردات متقدمة — Advanced Vocabulary</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.65rem;margin-bottom:1.5rem;">
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">يَتَصَاعَدُ</div>
+        <div style="font-size:.8rem;color:var(--muted);">escalates / intensifies</div>
+      </div>
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">بَوَّابَةٌ</div>
+        <div style="font-size:.8rem;color:var(--muted);">gateway / portal</div>
+      </div>
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">الْعُزْلَةُ</div>
+        <div style="font-size:.8rem;color:var(--muted);">isolation / seclusion</div>
+      </div>
+      <div style="background:var(--cream);border:1px solid var(--border);border-radius:.6rem;padding:.6rem .8rem;">
+        <div style="font-weight:700;font-size:1.05rem;color:#7a5200;">الرَّأْيُ الْوَسَطُ</div>
+        <div style="font-size:.8rem;color:var(--muted);">the middle ground</div>
+      </div>
+    </div>
+
+    <div class="block-label">✍️ مقال قصير — Short Essay</div>
+    <div class="writing-hdr">اكتب مقالاً قصيراً (١٠٠ كلمة) تعبّر فيه عن رأيك في تأثير وسائل التواصل الاجتماعي على الشباب.</div>
+    <div class="writing-lines">
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span><span class="trace-line"></span>
+      <span class="trace-line"></span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ─── Screen footer note ────────────────────────────────────────── -->
+<p class="screen-footer" style="text-align:center;font-size:.78rem;color:#aaa;margin-top:2rem;direction:ltr;font-family:system-ui,sans-serif;">
+  Bayt al-Hikma · Arabic Reading Practice Worksheets · All levels A1 – B2
+</p>
+
+<script>
+  /* ── Level filter ─────────────────────────── */
+  function filterLevel(level) {
+    // Update tab active state
+    document.querySelectorAll('.level-tab').forEach(t => t.classList.remove('active'));
+    const clicked = document.querySelector('.level-tab[data-level="' + level + '"]');
+    if (clicked) clicked.classList.add('active');
+
+    // Show/hide cards
+    document.querySelectorAll('.section-card').forEach(card => {
+      if (level === 'all' || card.dataset.level === level) {
+        card.style.display = '';
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    // Also show/hide toc groups
+    document.querySelectorAll('.toc-level-group').forEach(grp => {
+      const hdr = grp.querySelector('.toc-level-hdr');
+      if (!hdr) return;
+      const grpLevel = hdr.className.split(' ').find(c => ['a1','a2','b1','b2'].includes(c));
+      if (level === 'all' || grpLevel === level) {
+        grp.style.display = '';
+      } else {
+        grp.style.display = 'none';
+      }
+    });
+  }
+
+  /* ── Print tip ────────────────────────────── */
+  let _pendingMode = 'color';
+  function showTip(mode) {
+    _pendingMode = mode;
+    document.getElementById('printTip').classList.add('show');
+    document.getElementById('tipGo').onclick = function() { closeTip(); doPrint(_pendingMode); };
+  }
+  function closeTip() {
+    document.getElementById('printTip').classList.remove('show');
+  }
+  function doPrint(mode) {
+    if (mode === 'bw') {
+      document.body.classList.add('bw-mode');
+      setTimeout(function() {
+        window.print();
+        setTimeout(function() { document.body.classList.remove('bw-mode'); }, 500);
+      }, 150);
+    } else {
+      document.body.classList.remove('bw-mode');
+      window.print();
+    }
+  }
+
+  /* ── Download ─────────────────────────────── */
+  function downloadFile() {
+    const html = document.documentElement.outerHTML;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'arabic-reading-practice.html';
+    a.click(); URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>

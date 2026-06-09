@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Game Questions — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:vocab_list' %}">Game Vocabulary</a></li>
+    <li class="breadcrumb-item active">Game Questions</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+  <div>
+    <h1 class="h3 mb-1"><i class="bi bi-chat-quote me-2"></i>Game Questions</h1>
+    <p class="text-muted mb-0 small">Sentences for Sentence Builder and True-or-False.</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'games:vocab_list' %}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-collection me-1"></i>Vocabulary
+    </a>
+    <a href="{% url 'games:question_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add question
+    </a>
+  </div>
+</div>
+
+{# ── Filters ── #}
+<form method="get" class="card mb-4">
+  <div class="card-body py-3">
+    <div class="row g-3 align-items-end">
+      <div class="col-sm-4">
+        <label class="form-label">Game</label>
+        <select name="game" class="form-select form-select-sm">
+          <option value="">All games</option>
+          {% for val, label in game_choices %}
+            <option value="{{ val }}" {% if game_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label">Level</label>
+        <select name="level" class="form-select form-select-sm">
+          <option value="">All levels</option>
+          {% for l in levels %}
+            <option value="{{ l.code }}" {% if level_filter == l.code %}selected{% endif %}>
+              {{ l.code }} — {{ l.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+        <a href="{% url 'games:question_list' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% if questions %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Arabic sentence</th>
+          <th>English</th>
+          <th>Game</th>
+          <th class="text-center">Emoji / Answer</th>
+          <th>Level</th>
+          <th class="text-center">Active</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for q in questions %}
+          <tr>
+            <td>
+              <span style="font-family:'Cairo',serif;direction:rtl;font-size:1.05em;">
+                {{ q.arabic_sentence|truncatechars:50 }}
+              </span>
+            </td>
+            <td class="small text-muted">{{ q.english_sentence|truncatechars:40|default:"—" }}</td>
+            <td>
+              <span class="badge text-bg-info">{{ q.get_game_type_display }}</span>
+            </td>
+            <td class="text-center">
+              {% if q.game_type == "true_or_false" %}
+                {{ q.emoji }}
+                {% if q.is_true %}
+                  <span class="badge text-bg-success ms-1">True</span>
+                {% elif q.is_true == False %}
+                  <span class="badge text-bg-danger ms-1">False</span>
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              {% elif q.game_type == "sentence_builder" %}
+                <span class="text-muted small">{{ q.word_tokens|length }} tiles</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if q.level %}
+                <span class="badge text-bg-primary">{{ q.level.code }}</span>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if q.is_active %}
+                <span class="badge text-bg-success">Active</span>
+              {% else %}
+                <span class="badge text-bg-secondary">Off</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <div class="d-flex gap-1 justify-content-end">
+                <a href="{% url 'games:question_edit' q.id %}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="post" action="{% url 'games:question_delete' q.id %}"
+                      onsubmit="return confirm('Delete this question?')">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-danger" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="text-muted small mt-2">{{ questions|length }} question{{ questions|length|pluralize }} shown</p>
+{% else %}
+  <div class="bh-empty">
+    <i class="bi bi-chat-quote bh-empty-icon"></i>
+    <h5>No questions yet</h5>
+    <p class="text-muted small mb-3">Add sentences for Sentence Builder or True-or-False.</p>
+    <a href="{% url 'games:question_create' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>Add question
+    </a>
+  </div>
+{% endif %}
+{% endblock %}

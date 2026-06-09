@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}Parent dashboard — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">{{ user.first_name|default:user.email }}</h1>
+    <p class="text-muted mb-0">
+      <i class="bi bi-people me-1"></i>Parent dashboard
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'agenda:parent_agenda' %}" class="btn btn-primary btn-sm">
+      <i class="bi bi-calendar-week me-1"></i>Child's Agenda
+    </a>
+    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-person-gear me-1"></i>Edit profile
+    </a>
+  </div>
+</div>
+
+{% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endfor %}
+
+<div class="row g-4">
+
+  {# ── Children list ── #}
+  <div class="col-lg-8">
+    <h2 class="h5 mb-3">
+      <i class="bi bi-people me-1"></i>My children
+    </h2>
+
+    {% if children %}
+      <div class="row g-3">
+        {% for child in children %}
+          <div class="col-md-6">
+            <div class="card h-100">
+              <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                  {% if child.avatar %}
+                    <img src="{{ child.avatar.url }}"
+                         class="rounded-circle me-3 border"
+                         width="52" height="52"
+                         style="object-fit:cover;" alt="">
+                  {% else %}
+                    <div class="rounded-circle bg-body-tertiary d-flex
+                                align-items-center justify-content-center me-3 border"
+                         style="width:52px; height:52px;">
+                      <i class="bi bi-person fs-4 text-muted"></i>
+                    </div>
+                  {% endif %}
+                  <div>
+                    <div class="fw-semibold">
+                      {{ child.user.first_name|default:child.user.email }}
+                    </div>
+                    <div class="small text-muted">{{ child.get_age_track_display }}</div>
+                  </div>
+                </div>
+
+                <a href="{% url 'student_progress' child.user.id %}"
+                   class="btn btn-sm btn-outline-primary w-100 mb-3">
+                  <i class="bi bi-bar-chart-line me-1"></i>View progress report
+                </a>
+
+                <dl class="row small mb-2">
+                  <dt class="col-6 text-muted">Current level</dt>
+                  <dd class="col-6">
+                    {% if child.current_level %}
+                      <span class="badge text-bg-primary">{{ child.current_level.code }}</span>
+                      {{ child.current_level.name }}
+                    {% else %}
+                      <span class="text-warning">Not set</span>
+                    {% endif %}
+                  </dd>
+
+                  <dt class="col-6 text-muted">Active courses</dt>
+                  <dd class="col-6">{{ child.enrollment_count }}</dd>
+                </dl>
+
+                {# Progress bars for each active enrollment #}
+                {% for row in child.progress_rows %}
+                  <div class="mb-2">
+                    <div class="d-flex justify-content-between small mb-1">
+                      <span class="text-truncate me-2" style="max-width:70%;">
+                        {{ row.course_title }}
+                      </span>
+                      <span class="text-muted">{{ row.percent }}%</span>
+                    </div>
+                    <div class="progress" style="height: .35rem;">
+                      <div class="progress-bar" style="width:{{ row.percent }}%;"></div>
+                    </div>
+                  </div>
+                {% endfor %}
+
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-5 bg-body-tertiary rounded">
+        <i class="bi bi-people display-5 text-muted"></i>
+        <p class="lead mt-3 mb-2">No children linked yet.</p>
+        <p class="text-muted small">Use the form on the right to link your child's account.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  {# ── Link child sidebar ── #}
+  <div class="col-lg-4">
+    <div class="card">
+      <div class="card-header fw-semibold">
+        <i class="bi bi-person-plus me-1"></i>Link a child's account
+      </div>
+      <div class="card-body">
+        <p class="small text-muted mb-3">
+          Enter the email address your child used to sign up. They must
+          already have a student account.
+        </p>
+        <form method="post" action="{% url 'accounts:link_child' %}" novalidate>
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Child's email</label>
+            <input type="email" name="child_email" class="form-control"
+                   placeholder="child@example.com" required>
+          </div>
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-link-45deg me-1"></i>Link account
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mt-3">
+      <div class="card-body text-center py-4">
+        <i class="bi bi-person-gear display-6 text-muted mb-2 d-block"></i>
+        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary btn-sm">
+          Edit my profile
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+{% block title %}Word Hunt — البحث عن الكلمات{% endblock %}
+
+{% block content %}
+<style>
+:root {
+  --g-teal:   #0e7490;
+  --g-paper:  #fffdf7;
+  --g-border: #e0d8c8;
+  --g-sel:    #fde68a;
+}
+.game-wrap { max-width: 720px; margin: 0 auto; font-family: system-ui, sans-serif; }
+
+/* ── Header ─────────────────────────────────────────── */
+.game-hdr {
+  background: var(--g-teal); border-radius: 1.25rem;
+  padding: 1.25rem 1.75rem; margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: 1rem; color: #fff; direction: ltr;
+}
+.game-hdr-icon { font-size: 2rem; }
+.game-hdr h1 { font-size: 1.2rem; font-weight: 700; margin: 0; }
+.game-hdr p  { font-size: .82rem; color: rgba(255,255,255,.8); margin: .1rem 0 0; }
+.top-pills {
+  margin-left: auto; display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
+}
+.pill {
+  background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.35);
+  border-radius: 2rem; padding: .3rem .85rem;
+  font-weight: 700; font-size: .85rem; white-space: nowrap;
+}
+
+/* ── Progress bar ───────────────────────────────────── */
+.prog-track {
+  height: 7px; background: var(--g-border);
+  border-radius: 4px; margin-bottom: 1.25rem; overflow: hidden;
+}
+.prog-fill { height: 100%; background: var(--g-teal); border-radius: 4px; transition: width .5s; }
+
+/* ── Grid wrapper ───────────────────────────────────── */
+.grid-wrap {
+  background: var(--g-paper); border: 1px solid var(--g-border);
+  border-radius: 1.25rem; padding: 1rem;
+  box-shadow: 0 4px 24px rgba(14,116,144,.09);
+  margin-bottom: 1.25rem; touch-action: none; /* prevent scroll during drag */
+}
+.word-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  max-width: 560px;
+  margin: 0 auto;
+  user-select: none;
+}
+.gc {
+  aspect-ratio: 1;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 1.25rem; font-weight: 700; color: #333;
+  border-radius: 5px;
+  background: #fff; border: 1.5px solid var(--g-border);
+  cursor: pointer; transition: background .08s, color .08s;
+  position: relative;
+}
+.gc.sel     { background: var(--g-sel); border-color: #f59e0b; color: #92400e; }
+.gc.found-0 { background: #d4efdf; border-color: #27ae60; color: #1e8449; }
+.gc.found-1 { background: #dde8ff; border-color: #1a4d8c; color: #1a4d8c; }
+.gc.found-2 { background: #f0e6ff; border-color: #8b2fc9; color: #6b22a0; }
+.gc.found-3 { background: #fdecea; border-color: #c0392b; color: #a93226; }
+.gc.found-4 { background: #fef5e4; border-color: #e67e22; color: #b96a13; }
+.gc.found-5 { background: #e8f8f5; border-color: #16a085; color: #148a72; }
+.gc.found-6 { background: #fce8f3; border-color: #d63384; color: #b02a6b; }
+.gc.found-7 { background: #e3f2fd; border-color: #2196f3; color: #1565c0; }
+
+/* ── Word chips ─────────────────────────────────────── */
+.word-chips {
+  display: flex; flex-wrap: wrap; gap: .55rem;
+  justify-content: center; margin-bottom: .5rem;
+}
+.chip {
+  display: flex; align-items: center; gap: .45rem;
+  padding: .45rem .85rem; border-radius: 2rem;
+  border: 2px solid var(--g-border); background: #fff;
+  transition: all .2s;
+}
+.chip-emoji { font-size: 1.3rem; }
+.chip-ar {
+  font-family: 'Scheherazade New', 'Amiri', serif;
+  font-size: 1.2rem; font-weight: 700; color: #333;
+}
+.chip-en { font-size: .7rem; color: #888; font-weight: 600; }
+.chip.found-0 { background: #d4efdf; border-color: #27ae60; }
+.chip.found-1 { background: #dde8ff; border-color: #1a4d8c; }
+.chip.found-2 { background: #f0e6ff; border-color: #8b2fc9; }
+.chip.found-3 { background: #fdecea; border-color: #c0392b; }
+.chip.found-4 { background: #fef5e4; border-color: #e67e22; }
+.chip.found-5 { background: #e8f8f5; border-color: #16a085; }
+.chip.found-6 { background: #fce8f3; border-color: #d63384; }
+.chip.found-7 { background: #e3f2fd; border-color: #2196f3; }
+.chip.done .chip-ar { text-decoration: line-through; opacity: .55; }
+.chip.done .chip-en { text-decoration: line-through; opacity: .55; }
+
+/* ── Celebration ────────────────────────────────────── */
+.celebrate {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+}
+.celebrate.show { display: flex; }
+.celebrate-box {
+  background: #fff; border-radius: 1.5rem; padding: 2.5rem 3rem; text-align: center;
+  box-shadow: 0 2rem 5rem rgba(0,0,0,.3); animation: popIn .4s; max-width: 380px; width: 90%;
+}
+.celebrate-emoji { font-size: 4rem; }
+.celebrate-title { font-size: 1.6rem; font-weight: 800; color: var(--g-teal); margin: .5rem 0; }
+.celebrate-sub   { color: #666; margin-bottom: 1.5rem; font-size: .95rem; }
+.btn-next {
+  background: var(--g-teal); color: #fff; border: none; border-radius: .75rem;
+  padding: .85rem 2.5rem; font-size: 1.05rem; font-weight: 700;
+  cursor: pointer; font-family: system-ui, sans-serif;
+}
+
+/* ── Wrong-flash ────────────────────────────────────── */
+.gc.wrong-flash { background: #fdecea; border-color: #c0392b; animation: wrongPop .35s; }
+
+@keyframes popIn {
+  0%   { transform: scale(.7); opacity: 0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes wrongPop {
+  0%,100% { transform: scale(1); }
+  40%     { transform: scale(.92); }
+}
+</style>
+
+<link href="https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;700&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'games:hub' %}">Games</a></li>
+    <li class="breadcrumb-item active">Word Hunt</li>
+  </ol>
+</nav>
+
+<div class="game-wrap">
+
+  <div class="game-hdr">
+    <div class="game-hdr-icon">🔍</div>
+    <div>
+      <h1>Word Hunt — البحث عن الكلمات</h1>
+      <p>Find all 8 Arabic words hidden in the grid — drag to select</p>
+    </div>
+    <div class="top-pills">
+      <div class="pill" id="foundPill">0 / 8</div>
+      <div class="pill" id="timerPill">⏱ 0:00</div>
+    </div>
+  </div>
+
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+
+  <!-- Grid -->
+  <div class="grid-wrap">
+    <div class="word-grid" id="wordGrid"></div>
+  </div>
+
+  <!-- Word chips -->
+  <div class="word-chips" id="wordChips"></div>
+
+</div>
+
+<!-- Celebration -->
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-box">
+    <div class="celebrate-emoji" id="celebEmoji">🏆</div>
+    <div class="celebrate-title">All Found!</div>
+    <div class="celebrate-sub" id="celebSub"></div>
+    <button class="btn-next" onclick="newGame()">🔄 New Game</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  WORDS  (base letters only — no diacritics — for grid)
+// ═══════════════════════════════════════════════════════════
+const WORDS = {{ words_json|safe }};
+
+const GRID_SIZE = 10;
+const POOL = 'ابتثجحخدذرزسشصضطظعغفقكلمنهوي';
+// Directions: [dr, dc]
+const DIRS = [
+  [0, -1],   // horizontal RTL (←)  — natural Arabic reading
+  [1,  0],   // vertical down (↓)
+  [1, -1],   // diagonal ↙
+  [1,  1],   // diagonal ↘
+  [0,  1],   // horizontal LTR (→)
+  [-1, 0],   // vertical up (↑)
+];
+
+// ═══════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════
+let grid       = [];       // 2D [GRID_SIZE][GRID_SIZE] of letters
+let placements = [];       // {r,c,dr,dc,cells:[{r,c}...]} per word
+let cellFound  = [];       // 2D [GRID_SIZE][GRID_SIZE] = wordIdx or -1
+let foundWords = [];       // bool per word
+let foundCount = 0;
+
+// Selection state
+let selecting  = false;
+let selStart   = null;     // {r,c}
+let selCells   = [];       // [{r,c}...] currently highlighted
+
+// Timer
+let timerSec   = 0;
+let timerInt   = null;
+
+// ═══════════════════════════════════════════════════════════
+//  GRID GENERATION
+// ═══════════════════════════════════════════════════════════
+function newGame() {
+  if (!WORDS.length) {{
+    const ga = document.getElementById('game-area') || document.getElementById('board') || document.querySelector('.game-container');
+    if (ga) ga.innerHTML = '<div class="alert alert-info text-center mt-5"><i class=\"bi bi-info-circle me-2\"></i>No content yet — ask your teacher to add some!</div>';
+    return;
+  }}
+  document.getElementById('celebrate').classList.remove('show');
+  clearInterval(timerInt);
+  timerSec = 0; foundCount = 0;
+  foundWords = new Array(WORDS.length).fill(false);
+
+  generateGrid();
+  renderGrid();
+  renderChips();
+  updatePills();
+
+  // Start timer
+  timerInt = setInterval(() => {
+    timerSec++;
+    const m = Math.floor(timerSec / 60);
+    const s = String(timerSec % 60).padStart(2, '0');
+    document.getElementById('timerPill').textContent = `⏱ ${m}:${s}`;
+  }, 1000);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function generateGrid() {
+  // Keep trying until all words placed (usually 1 attempt)
+  for (let attempt = 0; attempt < 30; attempt++) {
+    grid = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(''));
+    cellFound = Array.from({length: GRID_SIZE}, () => Array(GRID_SIZE).fill(-1));
+    placements = new Array(WORDS.length).fill(null);
+
+    const order = shuffle([...Array(WORDS.length).keys()]);
+    let ok = true;
+    for (const idx of order) {
+      if (!placeWord(WORDS[idx].ar, idx)) { ok = false; break; }
+    }
+    if (ok) { fillRandom(); return; }
+  }
+  fillRandom(); // fallback (shouldn't happen)
+}
+
+function placeWord(word, idx) {
+  const dirs = shuffle(DIRS);
+  for (let a = 0; a < 200; a++) {
+    const [dr, dc] = dirs[a % dirs.length];
+    const r = Math.floor(Math.random() * GRID_SIZE);
+    const c = Math.floor(Math.random() * GRID_SIZE);
+
+    let fits = true;
+    const cells = [];
+    for (let i = 0; i < word.length; i++) {
+      const nr = r + dr * i, nc = c + dc * i;
+      if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) { fits = false; break; }
+      if (grid[nr][nc] && grid[nr][nc] !== word[i]) { fits = false; break; }
+      cells.push({r: nr, c: nc});
+    }
+    if (fits) {
+      cells.forEach(({r, c}, i) => grid[r][c] = word[i]);
+      placements[idx] = {r, c, dr, dc, cells};
+      return true;
+    }
+  }
+  return false;
+}
+
+function fillRandom() {
+  for (let r = 0; r < GRID_SIZE; r++)
+    for (let c = 0; c < GRID_SIZE; c++)
+      if (!grid[r][c])
+        grid[r][c] = POOL[Math.floor(Math.random() * POOL.length)];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════════
+function renderGrid() {
+  const el = document.getElementById('wordGrid');
+  el.innerHTML = '';
+  for (let r = 0; r < GRID_SIZE; r++) {
+    for (let c = 0; c < GRID_SIZE; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'gc';
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cell.textContent = grid[r][c];
+      el.appendChild(cell);
+    }
+  }
+  // Mouse events
+  el.addEventListener('mousedown', onMouseDown);
+  el.addEventListener('mouseover', onMouseOver);
+  el.addEventListener('mouseup',   onMouseUp);
+  // Touch events
+  el.addEventListener('touchstart', onTouchStart, {passive: false});
+  el.addEventListener('touchmove',  onTouchMove,  {passive: false});
+  el.addEventListener('touchend',   onTouchEnd,   {passive: false});
+}
+
+function renderChips() {
+  const el = document.getElementById('wordChips');
+  el.innerHTML = '';
+  WORDS.forEach((w, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.id = 'chip-' + i;
+    chip.innerHTML = `<span class="chip-emoji">${w.emoji}</span>
+      <span class="chip-ar">${w.ar}</span>
+      <span class="chip-en">${w.en}</span>`;
+    el.appendChild(chip);
+  });
+}
+
+function updatePills() {
+  document.getElementById('foundPill').textContent = `${foundCount} / ${WORDS.length}`;
+  document.getElementById('progFill').style.width =
+    Math.round((foundCount / WORDS.length) * 100) + '%';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SELECTION — MOUSE
+// ═══════════════════════════════════════════════════════════
+function getCellEl(r, c) {
+  return document.querySelector(`.gc[data-r="${r}"][data-c="${c}"]`);
+}
+function getRC(el) {
+  if (!el || !el.classList.contains('gc')) return null;
+  return {r: +el.dataset.r, c: +el.dataset.c};
+}
+function getElFromPoint(x, y) {
+  return getRC(document.elementFromPoint(x, y));
+}
+
+function onMouseDown(e) {
+  const rc = getRC(e.target);
+  if (!rc) return;
+  selecting = true;
+  selStart = rc;
+  applySelection([rc]);
+}
+function onMouseOver(e) {
+  if (!selecting) return;
+  const rc = getRC(e.target);
+  if (!rc) return;
+  applySelection(cellsInLine(selStart, rc));
+}
+function onMouseUp(e) {
+  if (!selecting) return;
+  selecting = false;
+  finalise(selCells);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SELECTION — TOUCH
+// ═══════════════════════════════════════════════════════════
+function onTouchStart(e) {
+  e.preventDefault();
+  const t = e.touches[0];
+  const rc = getElFromPoint(t.clientX, t.clientY);
+  if (!rc) return;
+  selecting = true; selStart = rc;
+  applySelection([rc]);
+}
+function onTouchMove(e) {
+  e.preventDefault();
+  if (!selecting) return;
+  const t = e.touches[0];
+  const rc = getElFromPoint(t.clientX, t.clientY);
+  if (!rc) return;
+  applySelection(cellsInLine(selStart, rc));
+}
+function onTouchEnd(e) {
+  e.preventDefault();
+  if (!selecting) return;
+  selecting = false;
+  finalise(selCells);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  GEOMETRY
+// ═══════════════════════════════════════════════════════════
+function cellsInLine(from, to) {
+  const dr = Math.sign(to.r - from.r);
+  const dc = Math.sign(to.c - from.c);
+  const rDiff = Math.abs(to.r - from.r);
+  const cDiff = Math.abs(to.c - from.c);
+
+  // Enforce straight lines: horizontal, vertical, or 45° diagonal
+  if (dr !== 0 && dc !== 0 && rDiff !== cDiff) return [from];
+
+  const cells = [];
+  const steps = Math.max(rDiff, cDiff);
+  for (let i = 0; i <= steps; i++) {
+    cells.push({r: from.r + dr * i, c: from.c + dc * i});
+  }
+  return cells;
+}
+
+function applySelection(cells) {
+  // Clear previous selection highlight (not found cells)
+  selCells.forEach(({r, c}) => {
+    const el = getCellEl(r, c);
+    if (el) el.classList.remove('sel');
+  });
+  selCells = cells;
+  selCells.forEach(({r, c}) => {
+    const el = getCellEl(r, c);
+    if (el && cellFound[r][c] === -1) el.classList.add('sel');
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FINALISE SELECTION
+// ═══════════════════════════════════════════════════════════
+function finalise(cells) {
+  // Remove selection highlight
+  cells.forEach(({r, c}) => {
+    const el = getCellEl(r, c);
+    if (el) el.classList.remove('sel');
+  });
+  selCells = [];
+
+  if (cells.length < 2) return;
+
+  // Check each word
+  for (let idx = 0; idx < WORDS.length; idx++) {
+    if (foundWords[idx]) continue;
+    const p = placements[idx];
+    if (!p) continue;
+
+    if (matchCells(cells, p.cells) || matchCells([...cells].reverse(), p.cells)) {
+      markFound(idx, p.cells);
+      return;
+    }
+  }
+
+  // Wrong — flash red briefly
+  cells.forEach(({r, c}) => {
+    const el = getCellEl(r, c);
+    if (!el) return;
+    el.classList.add('wrong-flash');
+    setTimeout(() => el.classList.remove('wrong-flash'), 400);
+  });
+}
+
+function matchCells(a, b) {
+  return a.length === b.length &&
+    a.every((cell, i) => cell.r === b[i].r && cell.c === b[i].c);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MARK FOUND
+// ═══════════════════════════════════════════════════════════
+function markFound(idx, cells) {
+  foundWords[idx] = true;
+  foundCount++;
+
+  cells.forEach(({r, c}) => {
+    cellFound[r][c] = idx;
+    const el = getCellEl(r, c);
+    if (el) {
+      el.classList.remove('sel');
+      el.classList.add('found-' + idx);
+    }
+  });
+
+  // Update chip
+  const chip = document.getElementById('chip-' + idx);
+  if (chip) {
+    chip.classList.add('found-' + idx, 'done');
+  }
+
+  updatePills();
+
+  if (foundCount === WORDS.length) {
+    clearInterval(timerInt);
+    setTimeout(showCelebration, 600);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  CELEBRATION
+// ═══════════════════════════════════════════════════════════
+function showCelebration() {
+  const m = Math.floor(timerSec / 60);
+  const s = String(timerSec % 60).padStart(2, '0');
+  document.getElementById('celebEmoji').textContent = timerSec < 60 ? '🏆' : timerSec < 120 ? '🌟' : '⭐';
+  document.getElementById('celebSub').innerHTML =
+    `You found all 8 words!<br>Time: <strong>${m}:${s}</strong>`;
+  document.getElementById('celebrate').classList.add('show');
+}
+
+// Start!
+newGame();
+</script>
+{% endblock %}

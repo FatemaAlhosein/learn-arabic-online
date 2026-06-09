@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card mt-4">
+      <div class="card-body p-4">
+        <h1 class="h3 mb-4 text-center">Sign in</h1>
+
+        {% comment %}
+          Django's LoginView passes a form with `username` (which is our
+          email field, since USERNAME_FIELD = 'email') and `password`.
+        {% endcomment %}
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+              {{ form.non_field_errors }}
+            </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label for="id_username" class="form-label">Email</label>
+            <input type="email" name="username" id="id_username"
+                   class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                   value="{{ form.username.value|default:'' }}"
+                   autocomplete="email" autofocus required>
+            {% if form.username.errors %}
+              <div class="invalid-feedback">{{ form.username.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label for="id_password" class="form-label">Password</label>
+            <input type="password" name="password" id="id_password"
+                   class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+                   autocomplete="current-password" required>
+            {% if form.password.errors %}
+              <div class="invalid-feedback">{{ form.password.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          {# Preserve the ?next= so the user lands where they were going. #}
+          <input type="hidden" name="next" value="{{ next }}">
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Sign in
+          </button>
+        </form>
+
+        <hr class="my-4">
+
+        <div class="d-flex justify-content-between small">
+          <a href="{% url 'password_reset' %}" class="text-decoration-none">
+            Forgot your password?
+          </a>
+          <a href="{% url 'accounts:signup' %}" class="text-decoration-none">
+            Create an account
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

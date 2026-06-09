@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}My dashboard — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-1">
+      Welcome back,
+      {{ user.first_name|default:user.email }}
+    </h1>
+    <p class="text-muted mb-0">
+      <i class="bi bi-person-circle me-1"></i>Student dashboard
+    </p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-person-gear me-1"></i>Edit profile
+    </a>
+    <a href="{% url 'curriculum:course_list' %}" class="btn btn-outline-primary">
+      <i class="bi bi-grid me-1"></i>Browse courses
+    </a>
+  </div>
+</div>
+
+{# ===== Top stat cards ===== #}
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card bh-stat-card">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">
+          <i class="bi bi-stack me-1"></i>Current level
+        </div>
+        <div class="fs-3 fw-semibold">
+          {% if student.current_level %}
+            {{ student.current_level.code }}
+            <small class="text-muted fs-6 ms-1">
+              {{ student.current_level.name }}
+            </small>
+          {% else %}
+            <span class="text-warning">Not set</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card bh-stat-card">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">
+          <i class="bi bi-book me-1"></i>Active courses
+        </div>
+        <div class="fs-3 fw-semibold">{{ active_count }}</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card bh-stat-card">
+      <div class="card-body">
+        <div class="text-muted small text-uppercase mb-1">
+          <i class="bi bi-trophy me-1"></i>Completed
+        </div>
+        <div class="fs-3 fw-semibold">{{ completed_count }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{# ===== No-level CTA (placement test) ===== #}
+{% if not student.current_level %}
+  <div class="alert alert-warning d-flex justify-content-between
+              align-items-center flex-wrap gap-2">
+    <div>
+      <i class="bi bi-exclamation-triangle-fill me-1"></i>
+      You don't have a level yet. Most courses need one — take the
+      placement test to find out where you stand.
+    </div>
+    {% if placement_quiz %}
+      <a href="{% url 'assessments:quiz_intro' placement_quiz.id %}"
+         class="btn btn-warning">
+        <i class="bi bi-clipboard-check me-1"></i>Take placement test
+      </a>
+    {% else %}
+      <button class="btn btn-warning" disabled
+              title="No published placement test yet">
+        Placement test unavailable
+      </button>
+    {% endif %}
+  </div>
+{% endif %}
+
+{# ===== Quick tools ===== #}
+<div class="d-flex gap-2 flex-wrap mb-4">
+  <a href="{% url 'agenda:student_agenda' %}" class="btn btn-primary">
+    <i class="bi bi-calendar-week me-1"></i>My Agenda 📅
+  </a>
+  <a href="{% url 'games:hub' %}" class="btn btn-success">
+    <i class="bi bi-controller me-1"></i>Games 🎮
+  </a>
+  <a href="{% url 'reading_practice' %}" class="btn btn-outline-success">
+    <i class="bi bi-book me-1"></i>Reading practice worksheets
+  </a>
+  <a href="{% url 'my_progress' %}" class="btn btn-outline-primary">
+    <i class="bi bi-bar-chart-line me-1"></i>My progress
+  </a>
+  <a href="{% url 'curriculum:course_list' %}" class="btn btn-outline-secondary">
+    <i class="bi bi-grid me-1"></i>Browse all courses
+  </a>
+</div>
+
+{# ===== Enrolments table ===== #}
+<h2 class="h5 mt-4 mb-3">My courses</h2>
+
+{% if enrollment_rows %}
+  <div class="row g-3">
+    {% for row in enrollment_rows %}
+      {% with e=row.enrollment c=row.enrollment.course %}
+        <div class="col-md-6">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex gap-1 flex-wrap mb-2">
+                {% if c.level %}
+                  <span class="badge text-bg-primary">{{ c.level.code }}</span>
+                {% else %}
+                  <span class="badge text-bg-success">Open</span>
+                {% endif %}
+                <span class="badge text-bg-light border">{{ c.category.name }}</span>
+                {% if e.status == 'active' %}
+                  <span class="badge text-bg-info">Active</span>
+                {% elif e.status == 'completed' %}
+                  <span class="badge text-bg-success">Completed</span>
+                {% else %}
+                  <span class="badge text-bg-secondary">{{ e.get_status_display }}</span>
+                {% endif %}
+              </div>
+
+              <h5 class="card-title mb-2">
+                <a href="{% url 'curriculum:course_detail' c.slug %}"
+                   class="text-decoration-none text-reset">
+                  {{ c.title }}
+                </a>
+              </h5>
+
+              <div class="small text-muted mb-2">
+                {{ row.completed }} / {{ row.total }} lesson{{ row.total|pluralize }}
+                completed
+              </div>
+              <div class="progress" role="progressbar" style="height: .5rem;"
+                   aria-valuenow="{{ row.percent }}" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width: {{ row.percent }}%;"></div>
+              </div>
+            </div>
+            <div class="card-footer bg-transparent d-flex gap-2 flex-wrap">
+              {% if e.status == 'completed' %}
+                <a href="{% url 'curriculum:course_detail' c.slug %}"
+                   class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-eye me-1"></i>Review
+                </a>
+                {% if e.certificate_code %}
+                  <a href="{% url 'certificate' e.certificate_code %}"
+                     class="btn btn-sm btn-success">
+                    <i class="bi bi-patch-check-fill me-1"></i>Certificate
+                  </a>
+                {% endif %}
+              {% else %}
+                <a href="{% url 'curriculum:course_detail' c.slug %}"
+                   class="btn btn-sm btn-primary">
+                  <i class="bi bi-play-fill me-1"></i>Continue
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endwith %}
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="text-center py-5 bg-body-tertiary rounded">
+    <i class="bi bi-journal-bookmark display-5 text-muted"></i>
+    <p class="lead mt-3 mb-2">You haven't enrolled in any courses yet.</p>
+    <a href="{% url 'curriculum:course_list' %}" class="btn btn-primary">
+      Browse the catalogue
+    </a>
+  </div>
+{% endif %}
+
+{% endblock %}

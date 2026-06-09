@@ -1,0 +1,382 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ SITE_NAME }} — Learn Modern Standard Arabic{% endblock %}
+
+
+{# =============== HERO (full-bleed) =============== #}
+{% block content_full %}
+<section class="bh-hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <div class="bh-hero-eyebrow mb-2">
+          Modern Standard Arabic · A1 → C2
+        </div>
+
+        <h1 class="mb-3">Welcome to<br>{{ SITE_NAME }}</h1>
+
+        <p class="bh-hero-arabic mb-3" lang="ar">بَيْتُ الحِكْمَة</p>
+
+        <p class="lead mb-4" style="max-width: 460px;">
+          A structured path through Modern Standard Arabic — from your
+          first letter to fluency. Six CEFR levels, courses for every age,
+          video and audio at every step.
+        </p>
+
+        <div class="d-flex gap-2 flex-wrap">
+          {% if user.is_authenticated %}
+            <a href="{% url 'dashboard' %}" class="btn btn-gold btn-lg">
+              <i class="bi bi-mortarboard-fill me-2"></i>Go to my dashboard
+            </a>
+          {% else %}
+            <a href="{% url 'accounts:signup' %}" class="btn btn-gold btn-lg">
+              <i class="bi bi-person-plus-fill me-2"></i>Get started free
+            </a>
+            <a href="{% url 'curriculum:course_list' %}"
+               class="btn btn-outline-primary btn-lg">
+              Browse courses
+            </a>
+          {% endif %}
+        </div>
+      </div>
+
+      {# ----- Calligraphy hero image ----- #}
+      <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+        <div class="position-relative" style="max-width: 500px; width: 100%;">
+          <img src="{% static 'img/arabic_img_2.jpg' %}"
+               alt="Arabic calligraphy"
+               class="img-fluid rounded-4 w-100"
+               style="box-shadow: 0 2rem 4rem rgba(20, 62, 44, 0.22);
+                      border: 1px solid var(--bs-border-color);">
+          {# Gold accent dots #}
+          <span style="position:absolute; top:-12px; left:-12px;
+                       width:28px; height:28px; border-radius:50%;
+                       background: var(--bh-gold-500);
+                       box-shadow: 0 0 0 7px rgba(200,155,60,0.16);"></span>
+          <span style="position:absolute; bottom:-10px; right:-10px;
+                       width:20px; height:20px; border-radius:50%;
+                       background: var(--bh-green-400);
+                       box-shadow: 0 0 0 5px rgba(47,122,90,0.14);"></span>
+          {# Floating level badge #}
+          <div style="position:absolute; top:1.25rem; right:-1rem;
+                      background: var(--bh-paper); border: 1px solid var(--bs-border-color);
+                      border-radius: var(--radius-lg); padding: .6rem 1rem;
+                      box-shadow: var(--shadow-md); display: flex; align-items: center; gap: .6rem;">
+            <span style="font-size:1.4rem; line-height:1;">🎓</span>
+            <div>
+              <div style="font-size:.7rem; font-weight:700; text-transform:uppercase;
+                          letter-spacing:.08em; color: var(--bh-green-500);">6 CEFR Levels</div>
+              <div style="font-size:.82rem; font-weight:600; color: var(--bh-ink);">A1 → C2</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ── Stats strip ── #}
+<div class="bh-stats-strip">
+  <div class="container">
+    <div class="row g-0 text-center">
+      <div class="col-6 col-md-3 bh-stats-item">
+        <div class="bh-stats-number">{{ stats.courses|default:"0" }}+</div>
+        <div class="bh-stats-label">Published Courses</div>
+      </div>
+      <div class="col-6 col-md-3 bh-stats-item">
+        <div class="bh-stats-number">{{ stats.students|default:"0" }}</div>
+        <div class="bh-stats-label">Students Enrolled</div>
+      </div>
+      <div class="col-6 col-md-3 bh-stats-item">
+        <div class="bh-stats-number">{{ stats.levels|default:"6" }}</div>
+        <div class="bh-stats-label">CEFR Levels</div>
+      </div>
+      <div class="col-6 col-md-3 bh-stats-item">
+        <div class="bh-stats-number">{{ stats.enrolled|default:"0" }}</div>
+        <div class="bh-stats-label">Active Learners</div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
+{# =============== Centered sections =============== #}
+{% block content %}
+
+{# ── Features ── #}
+<section class="bh-section">
+  <div class="text-center mb-5">
+    <h2 class="bh-section-title">A complete Arabic curriculum</h2>
+    <p class="bh-section-subtitle">
+      Built around the same framework universities and language schools use.
+    </p>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-md-4 text-center">
+      <div class="bh-feature-icon">
+        <i class="bi bi-stack"></i>
+      </div>
+      <h5>Six levels, A1 → C2</h5>
+      <p class="text-muted small mb-0">
+        CEFR-aligned progression. Take the placement test or start from
+        the very beginning.
+      </p>
+    </div>
+    <div class="col-md-4 text-center">
+      <div class="bh-feature-icon bh-icon-gold">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <h5>For every age</h5>
+      <p class="text-muted small mb-0">
+        Kids, teens, and adults — same language, age-appropriate examples
+        and pacing at every level.
+      </p>
+    </div>
+    <div class="col-md-4 text-center">
+      <div class="bh-feature-icon">
+        <i class="bi bi-mic-fill"></i>
+      </div>
+      <h5>Video + audio at every step</h5>
+      <p class="text-muted small mb-0">
+        Real teachers, native pronunciation, downloadable practice
+        material. Study online or offline.
+      </p>
+    </div>
+    <div class="col-md-4 text-center">
+      <div class="bh-feature-icon bh-icon-gold">
+        <i class="bi bi-controller"></i>
+      </div>
+      <h5>Learn through games</h5>
+      <p class="text-muted small mb-0">
+        Word builder, sentence scramble, word hunt, true-or-false —
+        vocabulary practice that doesn't feel like study.
+      </p>
+    </div>
+    <div class="col-md-4 text-center">
+      <div class="bh-feature-icon">
+        <i class="bi bi-award"></i>
+      </div>
+      <h5>Earn certificates</h5>
+      <p class="text-muted small mb-0">
+        Complete a course and receive a shareable certificate with a
+        unique verification code.
+      </p>
+    </div>
+    <div class="col-md-4 text-center">
+      <div class="bh-feature-icon bh-icon-gold">
+        <i class="bi bi-people"></i>
+      </div>
+      <h5>Parent visibility</h5>
+      <p class="text-muted small mb-0">
+        Parents get their own dashboard — track their child's progress,
+        quiz results, and completed courses.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+{# ── Arabic proverb banner ── #}
+<section class="bh-section pt-0">
+  <div class="card border-0 text-center position-relative overflow-hidden"
+       style="background: linear-gradient(135deg, var(--bh-green-900) 0%, var(--bh-green-700) 100%); color:#fff;">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+         style="position:absolute; top:1rem; left:1rem; width:64px; opacity:.18;">
+      <polygon points="50,5 60,40 95,40 67,60 78,95 50,75 22,95 33,60 5,40 40,40"
+               fill="var(--bh-gold-300)"/>
+    </svg>
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+         style="position:absolute; bottom:1rem; right:1rem; width:64px; opacity:.18;">
+      <polygon points="50,5 60,40 95,40 67,60 78,95 50,75 22,95 33,60 5,40 40,40"
+               fill="var(--bh-gold-300)"/>
+    </svg>
+    <div class="card-body py-5 px-4">
+      <p class="bh-hero-eyebrow mb-3" style="color: var(--bh-gold-300);">
+        An Arabic proverb
+      </p>
+      <div lang="ar" dir="rtl"
+           style="font-family: 'Amiri', 'Cairo', serif;
+                  font-size: clamp(2.4rem, 6vw, 4rem);
+                  font-weight: 700;
+                  color: var(--bh-gold-300);
+                  line-height: 1.4;">
+        اَلْعِلْمُ نُورٌ
+      </div>
+      <p class="lead mt-3 mb-1" style="color: rgba(255,255,255,0.92);">
+        "Knowledge is light."
+      </p>
+      <p class="small mb-0" style="color: rgba(255,255,255,0.6);">
+        <em>al-ʿilmu nūr</em> — a saying woven into a thousand years of Arabic learning.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+{# ── How it works ── #}
+<section class="bh-section">
+  <div class="text-center mb-5">
+    <div class="bh-hero-eyebrow mb-2">Simple steps</div>
+    <h2 class="bh-section-title">From first click to first certificate</h2>
+  </div>
+  <div class="row g-4 text-center">
+    <div class="col-md-3">
+      <div class="rounded-circle bg-body-tertiary d-inline-flex
+                  align-items-center justify-content-center mb-3"
+           style="width:72px;height:72px;font-size:1.75rem;
+                  border:2px solid var(--bh-green-200);">
+        <i class="bi bi-person-plus-fill" style="color:var(--bh-green-700); font-size:1.4rem;"></i>
+      </div>
+      <div class="fw-bold mb-1">1 — Create an account</div>
+      <p class="small text-muted mb-0">
+        Pick your role — student, parent, or teacher. Free, no card needed.
+      </p>
+    </div>
+    <div class="col-md-3">
+      <div class="rounded-circle bg-body-tertiary d-inline-flex
+                  align-items-center justify-content-center mb-3"
+           style="width:72px;height:72px;
+                  border:2px solid var(--bh-gold-300);">
+        <i class="bi bi-clipboard-check-fill" style="color:var(--bh-gold-600); font-size:1.4rem;"></i>
+      </div>
+      <div class="fw-bold mb-1">2 — Find your level</div>
+      <p class="small text-muted mb-0">
+        Take the free placement test or start at A1 and work your way up.
+      </p>
+    </div>
+    <div class="col-md-3">
+      <div class="rounded-circle bg-body-tertiary d-inline-flex
+                  align-items-center justify-content-center mb-3"
+           style="width:72px;height:72px;
+                  border:2px solid var(--bh-green-200);">
+        <i class="bi bi-play-btn-fill" style="color:var(--bh-green-700); font-size:1.4rem;"></i>
+      </div>
+      <div class="fw-bold mb-1">3 — Enrol &amp; learn</div>
+      <p class="small text-muted mb-0">
+        Browse the catalogue, preview free lessons, and enrol with one click.
+      </p>
+    </div>
+    <div class="col-md-3">
+      <div class="rounded-circle bg-body-tertiary d-inline-flex
+                  align-items-center justify-content-center mb-3"
+           style="width:72px;height:72px;
+                  border:2px solid var(--bh-gold-300);">
+        <i class="bi bi-award-fill" style="color:var(--bh-gold-600); font-size:1.4rem;"></i>
+      </div>
+      <div class="fw-bold mb-1">4 — Earn &amp; advance</div>
+      <p class="small text-muted mb-0">
+        Complete lessons and quizzes, earn a certificate, move to the next level.
+      </p>
+    </div>
+  </div>
+</section>
+
+
+{# ── Featured courses ── #}
+{% if featured_courses %}
+<section class="bh-section">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <div class="bh-hero-eyebrow mb-1">Browse the catalogue</div>
+      <h2 class="bh-section-title mb-0">Featured courses</h2>
+    </div>
+    <a href="{% url 'curriculum:course_list' %}" class="btn btn-outline-primary">
+      View all <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+
+  <div class="row g-4">
+    {% for course in featured_courses %}
+      <div class="col-md-6 col-lg-4">
+        <a href="{% url 'curriculum:course_detail' course.slug %}"
+           class="text-decoration-none text-reset">
+          <article class="card course-card h-100">
+            {% if course.thumbnail %}
+              <img src="{{ course.thumbnail.url }}" alt=""
+                   class="course-thumb card-img-top">
+            {% else %}
+              <div class="course-thumb position-relative">
+                <svg viewBox="0 0 320 140" xmlns="http://www.w3.org/2000/svg"
+                     preserveAspectRatio="xMidYMid slice"
+                     style="width:100%;height:100%;display:block;">
+                  <defs>
+                    <pattern id="fhgeo-{{ course.id }}" x="0" y="0"
+                             width="40" height="40" patternUnits="userSpaceOnUse">
+                      <path d="M20 0 L40 20 L20 40 L0 20 Z"
+                            fill="none" stroke="rgba(47,122,90,0.12)" stroke-width="1"/>
+                    </pattern>
+                  </defs>
+                  <rect width="320" height="140" fill="url(#fhgeo-{{ course.id }})"/>
+                  {% if course.level %}
+                    <text x="160" y="100" text-anchor="middle"
+                          font-family="Cairo, serif" font-size="76"
+                          font-weight="800" fill="rgba(47,122,90,0.7)">{{ course.level.code }}</text>
+                  {% else %}
+                    <text x="160" y="85" text-anchor="middle"
+                          font-family="Cairo, serif" font-size="36"
+                          font-weight="700" fill="rgba(200,155,60,0.8)">OPEN</text>
+                  {% endif %}
+                </svg>
+              </div>
+            {% endif %}
+            <div class="card-body">
+              <div class="d-flex gap-1 flex-wrap mb-2">
+                {% if course.level %}
+                  <span class="badge text-bg-primary">{{ course.level.code }}</span>
+                {% else %}
+                  <span class="badge text-bg-success">Open</span>
+                {% endif %}
+                <span class="badge text-bg-light border">{{ course.category.name }}</span>
+              </div>
+              <h5 class="card-title mb-1">{{ course.title }}</h5>
+              <p class="card-text small text-muted">
+                {{ course.description|truncatewords:15 }}
+              </p>
+            </div>
+            <div class="card-footer bg-transparent small text-muted">
+              <i class="bi bi-mortarboard me-1"></i>
+              {{ course.teacher.first_name|default:course.teacher.email }}
+            </div>
+          </article>
+        </a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+
+{# ── CTA ── #}
+{% if not user.is_authenticated %}
+<section class="bh-section pt-0">
+  <div class="card border-0 text-center overflow-hidden position-relative"
+       style="background: linear-gradient(135deg, var(--bh-green-50), var(--bh-gold-50));">
+    <div style="position:absolute; left:0; top:0; bottom:0; width:38%;
+                background-image: url('{% static 'img/arabic_img_3.png' %}');
+                background-size: cover; background-position: center;
+                opacity: 0.18; pointer-events: none;"></div>
+    <div class="card-body py-5 position-relative">
+      <h3 class="mb-2">Ready to begin?</h3>
+      <p lang="ar" class="mb-1"
+         style="font-family: 'Amiri', serif; color: var(--bh-green-700); font-size: 1.6rem;">
+        مَنْ جَدَّ وَجَدَ
+      </p>
+      <p class="text-muted small mb-4">
+        <em>man jadda wajad</em> — whoever strives, finds.
+        No card required, free placement test included.
+      </p>
+      <a href="{% url 'accounts:signup' %}" class="btn btn-primary btn-lg me-2">
+        <i class="bi bi-person-plus-fill me-1"></i>Create your account
+      </a>
+      <a href="{% url 'curriculum:course_list' %}" class="btn btn-outline-secondary btn-lg">
+        Browse courses first
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

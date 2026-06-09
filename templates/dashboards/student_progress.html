@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}{{ student_user.get_full_name|default:student_user.email }} — Progress Report — {{ SITE_NAME }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .stat-ring {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; font-weight: 800;
+    border: 4px solid var(--bh-green-100);
+    background: var(--bh-green-25);
+    color: var(--bh-green-700);
+  }
+  .score-bar { height: .5rem; border-radius: 999px; background: var(--bh-green-50); }
+  .score-fill { height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, var(--bh-green-500), var(--bh-green-400)); }
+  .score-fill.warn  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .score-fill.danger{ background: linear-gradient(90deg, #ef4444, #f87171); }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%;
+    background: var(--bh-green-300); flex-shrink: 0; margin-top: 5px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Progress Report</li>
+  </ol>
+</nav>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="d-flex align-items-center gap-4 flex-wrap">
+
+      {# Avatar #}
+      {% if student_profile.avatar %}
+        <img src="{{ student_profile.avatar.url }}"
+             class="rounded-circle border shadow-sm"
+             width="72" height="72" style="object-fit:cover;" alt="">
+      {% else %}
+        <div class="stat-ring" style="font-size:1.8rem;">
+          <i class="bi bi-person-fill"></i>
+        </div>
+      {% endif %}
+
+      {# Name + meta #}
+      <div class="flex-grow-1">
+        <h1 class="h3 mb-1">{{ student_user.get_full_name|default:student_user.email }}</h1>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+          {% if student_profile.current_level %}
+            <span class="badge text-bg-primary">{{ student_profile.current_level.code }}</span>
+            <span class="text-muted small">{{ student_profile.current_level.name }}</span>
+          {% else %}
+            <span class="badge text-bg-warning">No level set</span>
+          {% endif %}
+          <span class="text-muted small"><i class="bi bi-person-circle me-1"></i>{{ student_profile.get_age_track_display }}</span>
+          <span class="text-muted small"><i class="bi bi-envelope me-1"></i>{{ student_user.email }}</span>
+        </div>
+      </div>
+
+      {# Quick actions #}
+      {% if viewer_role != "student" %}
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{% url 'agenda:parent_agenda' %}?child={{ student_profile.id }}"
+             class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-calendar-week me-1"></i>Agenda
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card bh-stat-card h-100">
+      <div class="card-body text-center py-4">
+        <div class="text-muted small text-uppercase mb-2"><i class="bi bi-book me-1"></i>Courses</div>
+        <div class="fs-2 fw-bold">{{ course_rows|length }}</div>
+        <div class="text-muted small">enrolled</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card bh-stat-card h-100">
+      <div class="card-body text-center py-4">
+        <div class="text-muted small text-uppercase mb-2"><i class="bi bi-check2-circle me-1"></i>Lessons</div>
+        <div class="fs-2 fw-bold">{{ total_lessons_done }}</div>
+        <div class="text-muted small">of {{ total_lessons_all }} completed</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card bh-stat-card h-100">
+      <div class="card-body text-center py-4">
+        <div class="text-muted small text-uppercase mb-2"><i class="bi bi-clipboard-check me-1"></i>Avg score</div>
+        {% if avg_score is not None %}
+          <div class="fs-2 fw-bold {% if avg_score >= 70 %}text-success{% elif avg_score >= 50 %}text-warning{% else %}text-danger{% endif %}">
+            {{ avg_score }}%
+          </div>
+          <div class="text-muted small">{{ graded_submissions|length }} assignment{{ graded_submissions|length|pluralize }} graded</div>
+        {% else %}
+          <div class="fs-2 fw-bold text-muted">—</div>
+          <div class="text-muted small">no graded work yet</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card bh-stat-card h-100">
+      <div class="card-body text-center py-4">
+        <div class="text-muted small text-uppercase mb-2"><i class="bi bi-trophy me-1"></i>Quizzes</div>
+        <div class="fs-2 fw-bold">{{ quizzes_passed }}</div>
+        <div class="text-muted small">of {{ quiz_attempts|length }} passed</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <div class="col-lg-8">
+
+    <h2 class="h5 mb-3"><i class="bi bi-journals me-1"></i>Courses & assignments</h2>
+
+    {% if course_rows %}
+      {% for row in course_rows %}
+        {% with e=row.enrollment c=row.enrollment.course %}
+        <div class="card mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+              {% if c.level %}
+                <span class="badge text-bg-primary">{{ c.level.code }}</span>
+              {% else %}
+                <span class="badge text-bg-success">Open</span>
+              {% endif %}
+              <span class="fw-semibold">{{ c.title }}</span>
+              <span class="text-muted small">{{ c.category.name }}</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              {% if e.status == "completed" %}
+                <span class="badge text-bg-success"><i class="bi bi-check-circle me-1"></i>Completed</span>
+              {% elif e.status == "active" %}
+                <span class="badge text-bg-info">Active</span>
+              {% else %}
+                <span class="badge text-bg-secondary">{{ e.get_status_display }}</span>
+              {% endif %}
+              <span class="text-muted small">Started {{ e.started_at|date:"j M Y" }}</span>
+            </div>
+          </div>
+
+          <div class="card-body">
+            {# Lesson progress bar #}
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="text-muted">Lessons completed</span>
+              <span class="fw-semibold">{{ row.done }} / {{ row.total }}</span>
+            </div>
+            <div class="score-bar mb-3">
+              <div class="score-fill {% if row.percent < 40 %}danger{% elif row.percent < 70 %}warn{% endif %}"
+                   style="width:{{ row.percent }}%;"></div>
+            </div>
+
+            {# Assignments for this course #}
+            {% if row.submissions %}
+              <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                  <thead>
+                    <tr>
+                      <th>Assignment</th>
+                      <th class="text-center">Status</th>
+                      <th class="text-center">Score</th>
+                      <th class="text-muted text-end" style="font-weight:400;">Submitted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for sub in row.submissions %}
+                      <tr>
+                        <td class="small">{{ sub.assignment.title }}</td>
+                        <td class="text-center">
+                          {% if sub.status == "graded" %}
+                            <span class="badge text-bg-success">Graded</span>
+                          {% elif sub.status == "submitted" %}
+                            <span class="badge text-bg-warning">Pending</span>
+                          {% else %}
+                            <span class="badge text-bg-secondary">{{ sub.get_status_display }}</span>
+                          {% endif %}
+                        </td>
+                        <td class="text-center">
+                          {% if sub.score is not None %}
+                            <span class="fw-semibold {% if sub.score_percent >= 70 %}text-success{% elif sub.score_percent >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                              {{ sub.score_percent }}%
+                            </span>
+                            <span class="text-muted small">({{ sub.score }}/{{ sub.assignment.max_score }})</span>
+                          {% else %}
+                            <span class="text-muted">—</span>
+                          {% endif %}
+                        </td>
+                        <td class="text-muted text-end small">{{ sub.submitted_at|date:"j M" }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <p class="text-muted small mb-0"><i class="bi bi-inbox me-1"></i>No assignments submitted yet.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endwith %}
+      {% endfor %}
+    {% else %}
+      <div class="bh-empty">
+        <i class="bi bi-journals bh-empty-icon"></i>
+        <h5>No courses yet</h5>
+        <p class="text-muted small mb-0">Student hasn't enrolled in any courses.</p>
+      </div>
+    {% endif %}
+
+  </div>
+
+  <div class="col-lg-4">
+
+    {# Quiz results #}
+    <div class="card mb-4">
+      <div class="card-header"><i class="bi bi-clipboard-data me-1"></i>Quiz results</div>
+      {% if quiz_attempts %}
+        <ul class="list-group list-group-flush">
+          {% for attempt in quiz_attempts %}
+            <li class="list-group-item py-2 px-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="small fw-semibold text-truncate me-2" style="max-width:65%;">
+                  {{ attempt.quiz.title }}
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  {% if attempt.score is not None %}
+                    <span class="fw-bold small {% if attempt.passed %}text-success{% else %}text-danger{% endif %}">
+                      {{ attempt.score }}%
+                    </span>
+                  {% endif %}
+                  {% if attempt.passed %}
+                    <span class="badge text-bg-success" style="font-size:.7rem;">Pass</span>
+                  {% elif attempt.passed == False %}
+                    <span class="badge text-bg-danger" style="font-size:.7rem;">Fail</span>
+                  {% else %}
+                    <span class="badge text-bg-secondary" style="font-size:.7rem;">—</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="text-muted" style="font-size:.72rem;">
+                {{ attempt.started_at|date:"j M Y" }}
+                {% if attempt.quiz.level %} · {{ attempt.quiz.level.code }}{% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div class="card-body text-center py-4">
+          <i class="bi bi-clipboard display-6 text-muted"></i>
+          <p class="text-muted small mt-2 mb-0">No quiz attempts yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    {# Recent activity #}
+    <div class="card">
+      <div class="card-header"><i class="bi bi-clock-history me-1"></i>Recent activity</div>
+      {% if recent_activity %}
+        <div class="card-body p-0">
+          {% for p in recent_activity %}
+            <div class="d-flex gap-3 px-3 py-2 border-bottom">
+              <div class="activity-dot mt-1"></div>
+              <div class="small">
+                <div class="fw-semibold text-truncate" style="max-width:220px;">
+                  {{ p.lesson.title }}
+                </div>
+                <div class="text-muted" style="font-size:.75rem;">
+                  {{ p.lesson.course.title|truncatechars:28 }}
+                  · {{ p.last_viewed_at|timesince }} ago
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card-body text-center py-4">
+          <i class="bi bi-eye display-6 text-muted"></i>
+          <p class="text-muted small mt-2 mb-0">No lesson views yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

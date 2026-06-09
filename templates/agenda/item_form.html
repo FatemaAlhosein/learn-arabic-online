@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == "edit" %}Edit agenda item{% else %}Add agenda item{% endif %} — {{ SITE_NAME }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb small mb-0">
+    <li class="breadcrumb-item"><a href="{% url 'dashboard' %}">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'agenda:teacher_agenda' %}?w={{ week_offset }}">Agenda</a></li>
+    <li class="breadcrumb-item active">{% if mode == "edit" %}Edit item{% else %}New item{% endif %}</li>
+  </ol>
+</nav>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <div style="font-size:2rem;line-height:1;">{% if mode == "edit" %}✏️{% else %}➕{% endif %}</div>
+  <h1 class="h3 mb-0">{% if mode == "edit" %}Edit agenda item{% else %}Add agenda item{% endif %}</h1>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body p-4">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <input type="hidden" name="week_offset" value="{{ week_offset }}">
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Course <span class="text-danger">*</span></label>
+              {{ form.course }}
+              {% if form.course.errors %}<div class="text-danger small mt-1">{{ form.course.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Type <span class="text-danger">*</span></label>
+              {{ form.kind }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="text-danger small mt-1">{{ form.title.errors|join:", " }}</div>{% endif %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Description <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.description }}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+              {{ form.date }}
+              {% if form.date.errors %}<div class="text-danger small mt-1">{{ form.date.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold">{{ form.due_time.label }}</label>
+              {{ form.due_time }}
+            </div>
+          </div>
+
+          <hr class="my-3">
+          <p class="small text-muted mb-2">Optional — link to an existing lesson or assignment</p>
+
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">{{ form.linked_lesson.label }}</label>
+              {{ form.linked_lesson }}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">{{ form.linked_assignment.label }}</label>
+              {{ form.linked_assignment }}
+            </div>
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger small">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-1"></i>{% if mode == "edit" %}Save changes{% else %}Add to agenda{% endif %}
+            </button>
+            <a href="{% url 'agenda:teacher_agenda' %}?w={{ week_offset }}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
