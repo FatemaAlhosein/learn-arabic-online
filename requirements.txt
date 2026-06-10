@@ -4,6 +4,7 @@ mysqlclient==2.2.7
 python-decouple==3.8
 dj-database-url==2.3.0
 django-extensions==4.1
+Markdown==3.7
 Pillow==12.2.0
 djangorestframework==3.17.1
 djangorestframework-simplejwt==5.3.1
