@@ -28,13 +28,23 @@ from .models import StudentProfile, User
 
 class SignupView(CreateView):
     """
-    Public signup page. On success, log the user in and send them home.
+    Public signup page — currently disabled during beta.
+    Redirects visitors to the demo instead.
     """
 
     model = User
     form_class = SignupForm
     template_name = "registration/signup.html"
     success_url = reverse_lazy("home")
+
+    def dispatch(self, request, *args, **kwargs):
+        # Registration is closed during beta — redirect to demo
+        messages.info(
+            request,
+            "🚧 Registration is currently closed while we finish building. "
+            "Try the demo to explore all features!"
+        )
+        return redirect("accounts:demo_login")
 
     def form_valid(self, form):
         response = super().form_valid(form)
