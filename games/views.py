@@ -99,12 +99,13 @@ def match_pairs(request):
 @login_required
 def sentence_builder(request):
     level = _student_level(request)
-    qs = GameQuestion.objects.filter(
+    base_qs = GameQuestion.objects.filter(
         game_type=GameQuestion.GameType.SENTENCE_BUILDER,
         is_active=True,
     ).select_related("level")
-    if level:
-        qs = qs.filter(level=level)
+    qs = base_qs.filter(level=level) if level else base_qs
+    if level and not qs.exists():
+        qs = base_qs
 
     # Group by level code (A1/A2/etc.) — fallback label "ALL" when no level set
     grouped = {}
@@ -140,13 +141,14 @@ def missing_letter(request):
 @login_required
 def true_or_false(request):
     level = _student_level(request)
-    qs = GameQuestion.objects.filter(
+    base_qs = GameQuestion.objects.filter(
         game_type=GameQuestion.GameType.TRUE_OR_FALSE,
         is_active=True,
         is_true__isnull=False,
     ).select_related("level")
-    if level:
-        qs = qs.filter(level=level)
+    qs = base_qs.filter(level=level) if level else base_qs
+    if level and not qs.exists():
+        qs = base_qs
 
     questions = [
         {
