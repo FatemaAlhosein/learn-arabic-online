@@ -27,13 +27,17 @@ def _student_level(request):
 
 
 def _vocab_qs(request, require_letters=False, require_missing=False):
-    """Return active VocabWords, optionally filtered by student level."""
+    """Return active VocabWords, optionally filtered by student level.
+    Falls back to all active words if none match the student's level."""
     level = _student_level(request)
-    qs = VocabWord.objects.filter(is_active=True).select_related("level")
-    if level:
-        qs = qs.filter(level=level)
+    base_qs = VocabWord.objects.filter(is_active=True).select_related("level")
+
+    qs = base_qs.filter(level=level) if level else base_qs
+    # Fall back to all words if level filter returns nothing
+    if level and not qs.exists():
+        qs = base_qs
+
     if require_letters:
-        # Only words that have letter-tile data
         qs = qs.exclude(letters=[])
     if require_missing:
         qs = qs.exclude(missing_index=None).exclude(wrong_choices=[])

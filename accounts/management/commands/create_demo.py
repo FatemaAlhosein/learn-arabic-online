@@ -18,11 +18,11 @@ class Command(BaseCommand):
         email    = "demo@learnarabicasl.com"
         password = "Demo1234!"
 
-        # Get A1 level
+        # Use C2 (highest level) so demo can access ALL courses
         try:
-            a1 = Level.objects.get(code="A1")
+            a1 = Level.objects.get(code="C2")
         except Level.DoesNotExist:
-            a1 = Level.objects.first()
+            a1 = Level.objects.order_by("-order").first()
 
         # Create user if not exists
         if User.objects.filter(email=email).exists():
