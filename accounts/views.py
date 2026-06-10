@@ -161,3 +161,17 @@ def link_child(request):
         messages.error(request, "Invalid request.")
 
     return redirect("dashboard")
+
+
+def demo_login(request):
+    """Auto-login as the demo student account so visitors can explore the site."""
+    from django.contrib.auth import authenticate, login as auth_login
+    DEMO_EMAIL    = "demo@learnarabicasl.com"
+    DEMO_PASSWORD = "Demo1234!"
+    user = authenticate(request, username=DEMO_EMAIL, password=DEMO_PASSWORD)
+    if user is not None:
+        auth_login(request, user)
+        messages.info(request, "You're browsing as a demo student. Create a free account to save your progress!")
+        return redirect("dashboard")
+    messages.warning(request, "Demo account not available yet. Please sign up for free!")
+    return redirect("accounts:signup")
