@@ -417,10 +417,25 @@ def lesson_detail(request, slug, lesson_slug):
             ).values("assignment_id", "status")
             submission_map = {s["assignment_id"]: s["status"] for s in subs}
 
+    import json
+    attachments_qs = lesson.attachments.all()
+    audio_data_json = json.dumps(
+        [
+            {
+                "title": a.title,
+                "url": a.file.url if a.file else a.external_url,
+            }
+            for a in attachments_qs
+            if a.kind == "audio"
+        ],
+        ensure_ascii=False,
+    )
+
     context = {
         "course": course,
         "lesson": lesson,
-        "attachments": lesson.attachments.all(),
+        "attachments": attachments_qs,
+        "audio_data_json": audio_data_json,
         "prev_lesson": prev_lesson,
         "next_lesson": next_lesson,
         "siblings": siblings,

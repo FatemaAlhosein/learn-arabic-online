@@ -325,4 +325,80 @@
   </div>
 
 </div>
+
+{# ── Inject audio players into Arabic letter tables ── #}
+{% if audio_data_json %}
+<script>
+(function () {
+  const AUDIO = {{ audio_data_json|safe }};
+
+  // Build a map: arabic_letter → { nameUrl, soundUrl }
+  // Title pattern: "ا Alef — letter name"  or  "ا Alef — pronunciation"
+  const map = {};
+  AUDIO.forEach(({ title, url }) => {
+    if (!title.includes('—')) return;
+    const [left, right] = title.split('—', 2);
+    const arabicLetter = left.trim().split(' ')[0];
+    if (!arabicLetter) return;
+    if (!map[arabicLetter]) map[arabicLetter] = {};
+    const kind = right.trim().toLowerCase();
+    if (kind.includes('letter name'))    map[arabicLetter].nameUrl  = url;
+    else if (kind.includes('pronunciation')) map[arabicLetter].soundUrl = url;
+  });
+
+  if (!Object.keys(map).length) return;
+
+  function makeAudio(url) {
+    const audio = document.createElement('audio');
+    audio.controls = true;
+    audio.preload  = 'none';
+    audio.style.cssText = 'height:34px;width:170px;vertical-align:middle;';
+    const src = document.createElement('source');
+    src.src  = url;
+    src.type = 'audio/mpeg';
+    audio.appendChild(src);
+    return audio;
+  }
+
+  // Arabic Unicode range
+  const ARABIC_RE = /[؀-ۿ]/;
+
+  document.querySelectorAll('.lesson-body table').forEach(table => {
+    const rows = Array.from(table.querySelectorAll('tr'));
+    if (rows.length < 2) return;
+
+    // Does the first data cell contain an Arabic character?
+    const firstCell = rows[1].querySelector('td');
+    if (!firstCell || !ARABIC_RE.test(firstCell.textContent)) return;
+
+    // Add header columns
+    const headerCells = rows[0].querySelectorAll('th');
+    if (!headerCells.length) return;
+    ['🔊 Name', '🔊 Sound'].forEach(label => {
+      const th = document.createElement('th');
+      th.textContent = label;
+      th.style.whiteSpace = 'nowrap';
+      rows[0].appendChild(th);
+    });
+
+    // Add audio cells to each data row
+    rows.slice(1).forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (!cells.length) return;
+      const arabic = cells[0].textContent.trim();
+      const data   = map[arabic] || {};
+
+      const tdName  = document.createElement('td');
+      const tdSound = document.createElement('td');
+
+      if (data.nameUrl)  tdName.appendChild(makeAudio(data.nameUrl));
+      if (data.soundUrl) tdSound.appendChild(makeAudio(data.soundUrl));
+
+      row.appendChild(tdName);
+      row.appendChild(tdSound);
+    });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
