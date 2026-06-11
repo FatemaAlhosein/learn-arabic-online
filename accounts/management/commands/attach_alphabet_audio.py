@@ -101,7 +101,7 @@ LESSON_AUDIO = [
 COURSE_SLUG = "arabic-alphabet-mastery"
 
 # Folder relative to this file: ../../../../Arabic-audio/
-AUDIO_DIR = Path(__file__).resolve().parents[4] / "Arabic-audio"
+AUDIO_DIR = Path(__file__).resolve().parents[3] / "Arabic-audio"
 
 
 class Command(BaseCommand):
