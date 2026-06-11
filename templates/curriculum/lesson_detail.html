@@ -124,41 +124,52 @@
       </h5>
       <ul class="list-group">
         {% for a in attachments %}
-          <li class="list-group-item d-flex justify-content-between
-                     align-items-center">
-            <div>
-              {# Pick an icon by kind. #}
-              {% if a.kind == 'audio' %}<i class="bi bi-headphones me-2"></i>
-              {% elif a.kind == 'pdf' %}<i class="bi bi-file-earmark-pdf me-2"></i>
-              {% elif a.kind == 'docx' %}<i class="bi bi-file-earmark-word me-2"></i>
-              {% elif a.kind == 'pptx' %}<i class="bi bi-file-earmark-slides me-2"></i>
-              {% elif a.kind == 'image' %}<i class="bi bi-image me-2"></i>
-              {% elif a.kind == 'video' %}<i class="bi bi-camera-video me-2"></i>
-              {% else %}<i class="bi bi-file-earmark me-2"></i>{% endif %}
-              {{ a.title }}
-              <span class="badge text-bg-light border ms-1">
-                {{ a.get_kind_display }}
-              </span>
-            </div>
-            <div>
-              {% if a.file %}
-                {% if a.is_downloadable %}
-                  <a href="{{ a.file.url }}" download class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-download me-1"></i>Download
-                  </a>
-                {% else %}
-                  <a href="{{ a.file.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-eye me-1"></i>View
-                  </a>
-                {% endif %}
-              {% elif a.external_url %}
-                <a href="{{ a.external_url }}" target="_blank" rel="noopener"
-                   class="btn btn-sm btn-outline-secondary">
-                  <i class="bi bi-box-arrow-up-right me-1"></i>Open
-                </a>
-              {% endif %}
-            </div>
+          {% with src=a.file.url|default:a.external_url %}
+          <li class="list-group-item">
+            {% if a.kind == 'audio' %}
+              {# Inline audio player #}
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="bi bi-headphones text-primary"></i>
+                <span class="fw-semibold small">{{ a.title }}</span>
+              </div>
+              <audio controls preload="none" class="w-100" style="height:36px;">
+                <source src="{{ src }}" type="audio/mpeg">
+                <a href="{{ src }}" target="_blank" rel="noopener">Play audio</a>
+              </audio>
+            {% else %}
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  {% if a.kind == 'pdf' %}<i class="bi bi-file-earmark-pdf me-2"></i>
+                  {% elif a.kind == 'docx' %}<i class="bi bi-file-earmark-word me-2"></i>
+                  {% elif a.kind == 'pptx' %}<i class="bi bi-file-earmark-slides me-2"></i>
+                  {% elif a.kind == 'image' %}<i class="bi bi-image me-2"></i>
+                  {% elif a.kind == 'video' %}<i class="bi bi-camera-video me-2"></i>
+                  {% else %}<i class="bi bi-file-earmark me-2"></i>{% endif %}
+                  {{ a.title }}
+                  <span class="badge text-bg-light border ms-1">{{ a.get_kind_display }}</span>
+                </div>
+                <div>
+                  {% if a.file %}
+                    {% if a.is_downloadable %}
+                      <a href="{{ src }}" download class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-download me-1"></i>Download
+                      </a>
+                    {% else %}
+                      <a href="{{ src }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-eye me-1"></i>View
+                      </a>
+                    {% endif %}
+                  {% elif a.external_url %}
+                    <a href="{{ src }}" target="_blank" rel="noopener"
+                       class="btn btn-sm btn-outline-secondary">
+                      <i class="bi bi-box-arrow-up-right me-1"></i>Open
+                    </a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
           </li>
+          {% endwith %}
         {% endfor %}
       </ul>
     {% endif %}
